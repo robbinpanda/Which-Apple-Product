@@ -6,38 +6,45 @@
   <meta name="color-scheme" content="light">
   <title>苹果产品对比 · 配置、性能与二手价</title>
   <meta name="description" content="2016 年以来 iPhone、iPad 与 MacBook 的官方配置、CPU 单核/多核与 GPU 综合性能、关键规格和二手参考价对比。">
-  <link rel="stylesheet" href="styles.css?v=20260817g">
+  <link rel="stylesheet" href="assets/styles.css?v=20260817k">
 </head>
 <body>
   <header class="hero">
     <div class="wrap hero-grid">
       <div>
         <h1>苹果产品对比</h1>
-        <p class="hero-copy">选机型和配置，直接比较性能、规格与二手价。</p>
+        <p class="hero-copy">先定预算和优先项，把十年机型快速缩成候选清单。</p>
       </div>
-      <div class="hero-actions"><a class="header-link" href="technical-report.html">方法说明</a><button class="header-link" id="openPencil" hidden>Pencil 适配</button></div>
+      <div class="hero-actions"><a class="header-link" href="docs/technical-report.html">方法说明</a><button class="header-link" id="openPencil" hidden>Pencil 适配</button></div>
     </div>
   </header>
 
   <main class="wrap">
-    <section class="toolbar" aria-label="产品筛选">
-      <div class="toolbar-top"><div class="tabs" id="categoryTabs"></div><label class="search"><span>⌕</span><input id="search" type="search" placeholder="搜索机型或芯片" aria-label="搜索产品"></label></div>
-      <div class="toolbar-bottom">
-        <label class="filter-control"><span>年份</span><select class="select-control filter-select" id="year" aria-label="年份"><option value="all">全部年份</option></select></label>
-        <label class="filter-control"><span>系列</span><select class="select-control filter-select" id="typeFilter" aria-label="系列"><option value="all">全部系列</option></select></label>
-        <label class="filter-control sort-control"><span>排序</span><select class="select-control filter-select" id="sort" aria-label="排序"><option value="yearDesc">年份从新到旧</option><option value="yearAsc">年份从旧到新</option><option value="singleDesc">单核从高到低</option><option value="multiDesc">多核从高到低</option><option value="gpuDesc">GPU 从高到低</option><option value="priceAsc">闲鱼低价优先</option></select></label>
-        <button class="reset-configs" id="resetConfigs" type="button" hidden disabled title="恢复当前分类全部机型的默认芯片与目标规格，不改变筛选、排序或已保存的对比"><span>复位配置</span><b class="reset-count" id="resetCount" hidden></b></button>
+    <section class="toolbar" aria-label="快速找产品">
+      <div class="toolbar-top"><div class="tabs" id="categoryTabs" role="group" aria-label="产品类别"></div><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="搜索机型、芯片或规格" aria-label="搜索机型、芯片或规格"></label></div>
+      <div class="finder-row">
+        <div class="priority-group" aria-labelledby="priorityLabel"><span class="control-label" id="priorityLabel">优先看</span><div class="priority-options" id="sortChoices" role="group" aria-label="结果优先顺序"></div></div>
+        <label class="budget-control"><span class="control-label">当前配置闲鱼起价不超过</span><span class="budget-input"><b>¥</b><input id="budget" type="number" min="0" step="100" inputmode="numeric" placeholder="不限" aria-label="当前配置闲鱼起价预算上限"></span></label>
+        <details class="more-filters" id="moreFilters"><summary>更多筛选 <b id="moreFilterCount" hidden></b></summary><div class="more-filter-panel">
+          <label class="filter-control"><span>机龄</span><select class="select-control filter-select" id="year" aria-label="机龄或年份"><option value="all">不限</option><option value="recent3">近 3 年</option><option value="recent5">近 5 年</option></select></label>
+          <label class="filter-control"><span>系列</span><select class="select-control filter-select" id="typeFilter" aria-label="系列"><option value="all">不限</option></select></label>
+        </div></details>
+        <button class="clear-filters" id="clearFilters" type="button" hidden>清除筛选</button>
+        <button class="reset-configs" id="resetConfigs" type="button" hidden disabled title="恢复当前分类全部机型的默认芯片与目标规格，不改变筛选、优先顺序或已保存的对比"><span>复位配置</span><b class="reset-count" id="resetCount" hidden></b></button>
       </div>
+      <div class="active-filters" id="activeFilters" aria-label="已启用筛选"></div>
       <p class="sr-only" id="configStatus" role="status" aria-live="polite"></p>
     </section>
 
-    <div class="result-meta"><div><h2 id="sectionTitle">iPhone</h2><p id="resultCount"></p></div><div class="performance-note" id="baselineBadges"></div></div>
-    <section id="results" aria-live="polite"></section>
+    <div class="change-notice" id="changeNotice" hidden></div>
+
+    <div class="result-meta"><div><h2 id="sectionTitle">iPhone 候选</h2><p id="resultCount" role="status" aria-live="polite"></p></div><div class="performance-note" id="baselineBadges"></div></div>
+    <section id="results"></section>
   </main>
 
-  <aside class="compare-dock" id="compareDock"><div class="dock-row"><div class="dock-items" id="dockItems"></div><button class="clear" id="clearCompare">清空</button><button class="open-compare" id="openCompare">并排对比 <span id="compareCount"></span></button></div></aside>
+  <aside class="compare-dock" id="compareDock" hidden aria-hidden="true"><div class="dock-row"><div class="dock-items" id="dockItems"></div><button class="clear" id="clearCompare">清空</button><button class="open-compare" id="openCompare" disabled>再选 2 款</button></div></aside>
 
-  <div class="modal" id="compareModal" role="dialog" aria-modal="true" aria-labelledby="compareTitle"><div class="modal-card wide"><div class="modal-head"><div><div class="modal-kicker">Configuration-aware comparison</div><h2 id="compareTitle">按当前配置并排对比</h2></div><button class="close" data-close="compareModal" aria-label="关闭">×</button></div><div class="compare-grid" id="compareGrid"></div></div></div>
+  <div class="modal" id="compareModal" role="dialog" aria-modal="true" aria-labelledby="compareTitle"><div class="modal-card wide"><div class="modal-head"><div><div class="modal-kicker">Configuration-aware comparison</div><h2 id="compareTitle">按当前配置并排对比</h2></div><button class="close" data-close="compareModal" aria-label="关闭">×</button></div><div class="compare-grid" id="compareGrid" role="table" aria-label="当前配置对比"></div></div></div>
 
   <div class="modal" id="specModal" role="dialog" aria-modal="true" aria-labelledby="specTitle"><div class="modal-card"><div class="modal-head"><div><div class="modal-kicker">Apple technical specifications</div><h2 id="specTitle">完整关键规格</h2></div><button class="close" data-close="specModal" aria-label="关闭">×</button></div><div id="specBody"></div></div></div>
 
@@ -51,7 +58,7 @@
   </div></div>
 
   <footer><div class="wrap">个人选购对比工具，不隶属于 Apple、闲鱼、转转或 NanoReview。性能与二手价格均为快照估值；方法、来源和限制见技术报告。</div></footer>
-  <script src="data.js?v=20260817g"></script>
-  <script src="app.js?v=20260817g"></script>
+  <script src="assets/data.js?v=20260817k"></script>
+  <script src="assets/app.js?v=20260817k"></script>
 </body>
 </html>

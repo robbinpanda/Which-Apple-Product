@@ -1,0 +1,19 @@
+# Dependencies and generated reports
+node_modules/
+coverage/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

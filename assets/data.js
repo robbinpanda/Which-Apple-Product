@@ -1,6 +1,6 @@
 /*
  * 数据快照：2026-08-17。
- * 性能百分比不在这里手写；app.js 会从 raw 原始分按固定公式计算。
+ * 性能百分比不在这里手写；应用逻辑会从 raw 原始分按固定公式计算。
  * Apple 规格选项以各 product.official 的技术规格页为准。
  */
 window.APPLE_DATA=(()=>{
@@ -58,7 +58,7 @@ window.APPLE_DATA=(()=>{
 
   /* 3DMark 的不同子测试绝不能直接相除。iPhone A10–A17 Pro 使用
      Wild Life Extreme；A18 起只有 Steel Nomad Light 聚合值。iPad M
-     系列和 Mac M 系列使用 Steel Nomad Light。app.js 只在候选与基准
+     系列和 Mac M 系列使用 Steel Nomad Light。应用逻辑只在候选与基准
      的 test id 完全相同时纳入 3DMark，否则按缺项重分配权重。 */
   ['a10','a11','a12','a13','a14','a15_5','a16','a17pro'].forEach(id=>benchmarks[id].gpu.threeDTest='3DMark Wild Life Extreme');
   ['a18','a18pro','a19','a19pro_6'].forEach(id=>benchmarks[id].gpu.threeDTest='3DMark Steel Nomad Light');
@@ -187,19 +187,21 @@ window.APPLE_DATA=(()=>{
   setChipSpecs(['m1max_10_24','m1max_10_32'],{memoryBandwidth:'400GB/s',mediaEngine:MEDIA_DOUBLE});
   setChipSpecs(['m2pro_10_16','m2pro_12_19'],{memoryBandwidth:'200GB/s',mediaEngine:MEDIA_SINGLE});
   setChipSpecs(['m2max_12_30','m2max_12_38'],{memoryBandwidth:'400GB/s',mediaEngine:MEDIA_DOUBLE});
-  setChipSpecs(['m3_8_10'],{memoryBandwidth:'100GB/s',mediaEngine:MEDIA_SINGLE_AV1});
+  setChipSpecs(['m2_8_8','m2_8_10'],{memoryBandwidth:'100GB/s',mediaEngine:MEDIA_SINGLE});
+  setChipSpecs(['m3_8_8','m3_8_10'],{memoryBandwidth:'100GB/s',mediaEngine:MEDIA_SINGLE_AV1});
   setChipSpecs(['m3pro_11_14','m3pro_12_18'],{memoryBandwidth:'150GB/s',mediaEngine:MEDIA_SINGLE_AV1});
   setChipSpecs(['m3max_14_30'],{memoryBandwidth:'300GB/s',mediaEngine:MEDIA_DOUBLE_AV1});
   setChipSpecs(['m3max_16_40'],{memoryBandwidth:'400GB/s',mediaEngine:MEDIA_DOUBLE_AV1});
-  setChipSpecs(['m4_10_10'],{memoryBandwidth:'120GB/s',mediaEngine:MEDIA_SINGLE_AV1});
+  setChipSpecs(['m4_10_8','m4_10_10'],{memoryBandwidth:'120GB/s',mediaEngine:MEDIA_SINGLE_AV1});
   setChipSpecs(['m4pro_12_16','m4pro_14_20'],{memoryBandwidth:'273GB/s',mediaEngine:MEDIA_SINGLE_AV1});
   setChipSpecs(['m4max_14_32'],{memoryBandwidth:'410GB/s',mediaEngine:MEDIA_DOUBLE_AV1});
   setChipSpecs(['m4max_16_40'],{memoryBandwidth:'546GB/s',mediaEngine:MEDIA_DOUBLE_AV1});
-  setChipSpecs(['m5_10_10'],{memoryBandwidth:'153GB/s',mediaEngine:MEDIA_SINGLE_AV1,neuralAccelerator:'支持'});
+  setChipSpecs(['m5_10_8','m5_10_10'],{memoryBandwidth:'153GB/s',mediaEngine:MEDIA_SINGLE_AV1,neuralAccelerator:'支持'});
+  setChipSpecs(['a18pro_5'],{memoryBandwidth:'60GB/s',mediaEngine:MEDIA_SINGLE_AV1});
   setChipSpecs(['m5pro_15_16','m5pro_18_20'],{memoryBandwidth:'307GB/s',mediaEngine:MEDIA_SINGLE_AV1,neuralAccelerator:'支持'});
   setChipSpecs(['m5max_18_32'],{memoryBandwidth:'460GB/s',mediaEngine:MEDIA_DOUBLE_AV1,neuralAccelerator:'支持'});
   setChipSpecs(['m5max_18_40'],{memoryBandwidth:'614GB/s',mediaEngine:MEDIA_DOUBLE_AV1,neuralAccelerator:'支持'});
-  Object.assign(benchmarks.m5_10_10.cpu,{coreBreakdown:'4 个超级核心 + 6 个能效核心'});
+  ['m5_10_8','m5_10_10'].forEach(id=>Object.assign(benchmarks[id].cpu,{coreBreakdown:'4 个超级核心 + 6 个能效核心'}));
   Object.assign(benchmarks.m5pro_15_16.cpu,{coreBreakdown:'5 个超级核心 + 10 个性能核心'});
   ['m5pro_18_20','m5max_18_32','m5max_18_40'].forEach(id=>Object.assign(benchmarks[id].cpu,{coreBreakdown:'6 个超级核心 + 12 个性能核心'}));
 
@@ -429,7 +431,7 @@ window.APPLE_DATA=(()=>{
       macCfg('m3max_14_30',['36GB','96GB'],S1_8,5200,{weight:'2.16kg',battery:'100Wh',batteryRuntime:'视频 22 小时 / 无线上网 15 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'}),
       macCfg('m3max_16_40',['48GB','64GB','128GB'],S1_8,8600,{weight:'2.16kg',battery:'100Wh',batteryRuntime:'视频 22 小时 / 无线上网 15 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'})
     ],[10100,13300,8590,11310],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','2.14kg','100Wh','雷雳 4 × 3；HDMI 2.1；SDXC；MagSafe 3；3.5mm','SDR 600；XDR 1000 / 1600 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3')),
-    mac('mba13_m3','2024-03-08','Air','MacBook Air 13 英寸（M3，2024）','https://support.apple.com/zh-cn/118551',[cfg('m3_8_8',['8GB','16GB','24GB'],S256_2),cfg('m3_8_10',['8GB','16GB','24GB'],S256_2,700)],[5200,6800,4420,5780],macSpec('13.6 英寸 Liquid Retina','2560 × 1664','60Hz','1.24kg','52.6Wh','雷雳 / USB 4 × 2；MagSafe 3；3.5mm','500 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3','合盖最多 2 台外接显示器')),
+    mac('mba13_m3','2024-03-08','Air','MacBook Air 13 英寸（M3，2024）','https://support.apple.com/zh-cn/118551',[cfg('m3_8_8',['8GB'],['256GB']),cfg('m3_8_8',['16GB'],['256GB']),cfg('m3_8_10',['8GB','16GB','24GB'],S256_2,700)],[5200,6800,4420,5780],macSpec('13.6 英寸 Liquid Retina','2560 × 1664','60Hz','1.24kg','52.6Wh','雷雳 / USB 4 × 2；MagSafe 3；3.5mm','500 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3','合盖最多 2 台外接显示器')),
     mac('mba15_m3','2024-03-08','Air','MacBook Air 15 英寸（M3，2024）','https://support.apple.com/zh-cn/118552',[cfg('m3_8_10',['8GB','16GB','24GB'],S256_2)],[6100,7900,5180,6720],macSpec('15.3 英寸 Liquid Retina','2880 × 1864','60Hz','1.51kg','66.5Wh','雷雳 / USB 4 × 2；MagSafe 3；3.5mm','500 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3','合盖最多 2 台外接显示器')),
     mac('mbp14_m4','2024-11-08','Pro 14','MacBook Pro 14 英寸（M4 系列，2024）','https://support.apple.com/zh-cn/121553',[
       macCfg('m4_10_10',['16GB','24GB','32GB'],['512GB','1TB','2TB'],0,{weight:'1.55kg',battery:'72.4Wh',batteryRuntime:'流媒体 24 小时 / 无线上网 16 小时',power:'随附 70W；96W 可选并支持快充',ports:'雷雳 4 × 3（40Gb/s，DisplayPort 1.4）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'},'https://support.apple.com/zh-cn/121552'),
@@ -443,13 +445,16 @@ window.APPLE_DATA=(()=>{
       macCfg('m4max_14_32',['36GB'],S1_8,5700,{weight:'2.15kg',battery:'100Wh',batteryRuntime:'流媒体 21 小时 / 无线上网 14 小时',power:'随附 140W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'}),
       macCfg('m4max_16_40',['48GB','64GB','128GB'],S1_8,9000,{weight:'2.15kg',battery:'100Wh',batteryRuntime:'流媒体 21 小时 / 无线上网 14 小时',power:'随附 140W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'})
     ],[11900,15300,10120,13010],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','2.14kg','100Wh','雷雳 5 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3')),
-    mac('mba13_m4','2025-03-12','Air','MacBook Air 13 英寸（M4，2025）','https://support.apple.com/zh-cn/122209',[cfg('m4_10_8',['16GB','24GB','32GB'],S256_2),cfg('m4_10_10',['16GB','24GB','32GB'],S256_2,700)],[6500,8100,5520,6890],macSpec('13.6 英寸 Liquid Retina','2560 × 1664','60Hz','1.24kg','53.8Wh','雷雳 4 × 2；MagSafe 3；3.5mm','500 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3','最多 2 台 6K 外接显示器')),
+    mac('mba13_m4','2025-03-12','Air','MacBook Air 13 英寸（M4，2025）','https://support.apple.com/zh-cn/122209',[macCfg('m4_10_8',['16GB'],['256GB'],0,{power:'随附 30W；35W 可选；70W 支持快充'}),macCfg('m4_10_10',['16GB','24GB','32GB'],S256_2,700,{power:'随附 35W；70W 支持快充'})],[6500,8100,5520,6890],macSpec('13.6 英寸 Liquid Retina','2560 × 1664','60Hz','1.24kg','53.8Wh','雷雳 4 × 2；MagSafe 3；3.5mm','500 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3','最多 2 台 6K 外接显示器')),
     mac('mba15_m4','2025-03-12','Air','MacBook Air 15 英寸（M4，2025）','https://support.apple.com/zh-cn/122210',[cfg('m4_10_10',['16GB','24GB','32GB'],S256_2)],[7600,9300,6460,7910],macSpec('15.3 英寸 Liquid Retina','2880 × 1864','60Hz','1.51kg','66.5Wh','雷雳 4 × 2；MagSafe 3；3.5mm','500 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3','最多 2 台 6K 外接显示器')),
     mac('mbp14_m5','2025-10-22','Pro 14','MacBook Pro 14 英寸（M5，2025）','https://support.apple.com/zh-cn/125405',[
       macCfg('m5_10_10',['16GB','24GB','32GB'],['512GB','1TB','2TB','4TB'],0,{weight:'1.55kg',battery:'72.4Wh',batteryRuntime:'流媒体 24 小时 / 无线上网 16 小时',power:'随附 70W；96W 可选并支持快充',ports:'雷雳 4 × 3（40Gb/s，DisplayPort 1.4）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'})
     ],[11800,14500,10030,12320],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','1.55kg','72.4Wh','雷雳 4 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3')),
-    mac('macbook_neo','2026-03-11','Neo','MacBook Neo（2026）','https://support.apple.com/zh-cn/126322',[cfg('a18pro_5',['8GB'],['256GB','512GB'])],[4200,5200,3570,4420],macSpec('13 英寸 Liquid Retina','2408 × 1506','60Hz','1.23kg','36.5Wh','USB‑C（USB 3，10Gb/s；DisplayPort 1.4）× 1；USB‑C（USB 2，480Mb/s）× 1；3.5mm','500 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 6','1 台最高 4K 60Hz 外接显示器')),
-    mac('mba13_m5','2026-03-11','Air','MacBook Air 13 英寸（M5，2026）','https://support.apple.com/zh-cn/126320',[cfg('m5_10_8',['16GB','24GB','32GB'],S512_4),cfg('m5_10_10',['16GB','24GB','32GB'],S512_4,700)],[8000,9700,6800,8250],macSpec('13.6 英寸 Liquid Retina','2560 × 1664','60Hz','1.23kg','53.8Wh','雷雳 4 / USB 4（40Gb/s；DisplayPort 1.4）× 2；MagSafe 3；3.5mm','500 尼特','1200 万像素人物居中','Wi‑Fi 7；蓝牙 6','2 台 6K60 / 4K144；或 1 台 8K60 / 5K120 / 4K240')),
+    mac('macbook_neo','2026-03-11','Neo','MacBook Neo（2026）','https://support.apple.com/zh-cn/126322',[
+      macCfg('a18pro_5',['8GB'],['256GB'],0,{keyboard:'妙控键盘（不带触控 ID）',authentication:'无触控 ID'}),
+      macCfg('a18pro_5',['8GB'],['512GB'],0,{keyboard:'带触控 ID 的妙控键盘',authentication:'触控 ID'})
+    ],[4200,5200,3570,4420],macSpec('13 英寸 Liquid Retina','2408 × 1506','60Hz','1.23kg','36.5Wh','USB‑C（USB 3，10Gb/s；DisplayPort 1.4）× 1；USB‑C（USB 2，480Mb/s）× 1；3.5mm','500 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 6','1 台最高 4K 60Hz 外接显示器')),
+    mac('mba13_m5','2026-03-11','Air','MacBook Air 13 英寸（M5，2026）','https://support.apple.com/zh-cn/126320',[cfg('m5_10_8',['16GB'],['512GB']),cfg('m5_10_10',['16GB','24GB','32GB'],S512_4,700)],[8000,9700,6800,8250],macSpec('13.6 英寸 Liquid Retina','2560 × 1664','60Hz','1.23kg','53.8Wh','雷雳 4 / USB 4（40Gb/s；DisplayPort 1.4）× 2；MagSafe 3；3.5mm','500 尼特','1200 万像素人物居中','Wi‑Fi 7；蓝牙 6','2 台 6K60 / 4K144；或 1 台 8K60 / 5K120 / 4K240')),
     mac('mba15_m5','2026-03-11','Air','MacBook Air 15 英寸（M5，2026）','https://support.apple.com/zh-cn/126321',[cfg('m5_10_10',['16GB','24GB','32GB'],S512_4)],[9100,10900,7740,9270],macSpec('15.3 英寸 Liquid Retina','2880 × 1864','60Hz','1.51kg','66.5Wh','雷雳 4 / USB 4（40Gb/s；DisplayPort 1.4）× 2；MagSafe 3；3.5mm','500 尼特','1200 万像素人物居中','Wi‑Fi 7；蓝牙 6','2 台 6K60 / 4K144；或 1 台 8K60 / 5K120 / 4K240')),
     mac('mbp14_m5pro','2026-03-11','Pro 14','MacBook Pro 14 英寸（M5 Pro / Max，2026）','https://support.apple.com/zh-cn/126318',[
       macCfg('m5pro_15_16',['24GB','48GB'],['1TB','2TB','4TB'],0,{weight:'1.60kg',battery:'72.4Wh',batteryRuntime:'流媒体 22 小时 / 无线上网 14 小时',power:'随附 70W；96W 可选并支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 3 台外接'}),
@@ -508,7 +513,7 @@ window.APPLE_DATA=(()=>{
   /* iPad 技术规格页公开额定 Wh；同时保留 Apple 的 10 小时 Wi‑Fi 使用口径。 */
   const ipadWh={ipadpro97:27.5,ipad5:32.4,ipadpro105:30.4,ipadpro129_2:41,ipad6:32.4,ipadpro11_1:29.37,ipadpro129_3:36.71,ipadair3:30.2,ipadmini5:19.1,ipad7:32.4,ipadpro11_2:28.65,ipadpro129_4:36.71,ipad8:32.4,ipadair4:28.6,ipadpro11_3:28.65,ipadpro129_5:40.88,ipad9:32.4,ipadmini6:19.3,ipadair5:28.6,ipad10:28.6,ipadpro11_4:28.65,ipadpro129_6:40.88,ipadair11_m2:28.93,ipadair13_m2:36.59,ipadpro11_m4:31.29,ipadpro13_m4:38.99,ipadmini_a17:19.3,ipad_a16:28.93,ipadair11_m3:28.93,ipadair13_m3:36.59,ipadpro11_m5:31.29,ipadpro13_m5:38.99,ipadair11_m4:28.93,ipadair13_m4:36.59};
   const ipadLinks={ipadpro97:'111965',ipad5:'111960',ipadpro105:'111927',ipadpro129_2:'111964',ipad6:'111957',ipadpro11_1:'111974',ipadpro129_3:'111979',ipadair3:'111939',ipadmini5:'111904',ipad7:'111911',ipadmini6:'111886',ipadmini_a17:'121456'};
-  Object.entries(ipadWh).forEach(([id,wh])=>{const p=products.find(x=>x.id===id);if(p){p.specs.battery=`${wh}Wh；WLAN 浏览网页或观看视频最长 10 小时；蜂窝网络浏览最长 9 小时`;if(p.year<=2022&&p.type==='Pro'&&p.specs.refresh.includes('120Hz'))p.specs.refresh='ProMotion'}});
+  Object.entries(ipadWh).forEach(([id,wh])=>{const p=products.find(x=>x.id===id);if(p){p.specs.battery=`${wh}Wh`;if(p.year<=2022&&p.type==='Pro'&&p.specs.refresh.includes('120Hz'))p.specs.refresh='ProMotion'}});
   Object.entries(ipadLinks).forEach(([id,n])=>{const p=products.find(x=>x.id===id);if(p)p.official=`https://support.apple.com/zh-cn/${n}`});
 
   const ipadWeights={
@@ -520,6 +525,43 @@ window.APPLE_DATA=(()=>{
     ipadpro13_m4:'WLAN 579g / 蜂窝 582g',ipadmini_a17:'WLAN 293g / 蜂窝 297g',ipad_a16:'WLAN 477g / 蜂窝 481g',ipadair11_m3:'WLAN 460g / 蜂窝 460g',ipadair13_m3:'WLAN 616g / 蜂窝 617g',
     ipadpro11_m5:'WLAN 444g / 蜂窝 446g',ipadpro13_m5:'WLAN 579g / 蜂窝 582g',ipadair11_m4:'WLAN 464g / 蜂窝 465g',ipadair13_m4:'WLAN 616g / 蜂窝 617g'
   };
+  /* 蜂窝差价为对应机型发布时 Apple 新机选项价差，价格模型会再按机龄折旧。
+     其中六款早期机型的中国新闻稿未同时列两种价格，使用 Apple 美国官方美元
+     差价与同期国行价交叉得到的先验，并在技术报告中单独披露。 */
+  const ipadCellularLaunchDelta={
+    ipadpro97:1000,ipad5:1000,ipadpro105:1000,ipadpro129_2:1000,ipad6:1000,
+    ipadpro11_1:1200,ipadpro129_3:1200,ipadair3:1000,ipadmini5:1000,ipad7:1000,
+    ipadpro11_2:1200,ipadpro129_4:1200,ipad8:1000,ipadair4:1000,ipadpro11_3:1200,ipadpro129_5:1200,
+    ipad9:1000,ipadmini6:1200,ipadair5:1100,ipad10:1200,ipadpro11_4:1200,ipadpro129_6:1200,
+    ipadair11_m2:1000,ipadair13_m2:1000,ipadpro11_m4:1700,ipadpro13_m4:1700,ipadmini_a17:1000,
+    ipad_a16:1300,ipadair11_m3:1300,ipadair13_m3:1300,ipadpro11_m5:1700,ipadpro13_m5:1700,
+    ipadair11_m4:1300,ipadair13_m4:1300
+  };
+  const ipadCellularPriorIds=new Set(['ipadpro97','ipad5','ipadpro105','ipadpro129_2','ipadpro11_1','ipadpro129_3']);
+  const nanoIpadIds=new Set(['ipadpro11_m4','ipadpro13_m4','ipadpro11_m5','ipadpro13_m5']);
+  const ipadWeightValues=value=>{
+    const match=value.match(/^WLAN ([\d.]+g) \/ 蜂窝 ([\d.]+g)$/);
+    if(!match)throw new Error(`iPad 重量格式无法解析：${value}`);
+    return {wlan:match[1],cellular:match[2]};
+  };
+  const ipadVariants=(id,allowNano)=>{
+    const weight=ipadWeightValues(ipadWeights[id]),cellularDelta=ipadCellularLaunchDelta[id];
+    if(!Number.isFinite(cellularDelta))throw new Error(`缺少 iPad 蜂窝选项价差：${id}`);
+    const evidence=ipadCellularPriorIds.has(id)?'cross-checked-prior':'apple-cn-launch-price';
+    const base=[
+      {key:'wlan-standard',label:'WLAN · 标准玻璃',isDefault:true,variantDelta:0,deltaEvidence:'base',searchTokens:'WLAN Wi-Fi 无线局域网 标准玻璃',specs:{weight:weight.wlan,networkVersion:'WLAN 版',displayGlass:'标准显示屏玻璃',batteryRuntime:'WLAN 浏览网页或观看视频最长 10 小时'}},
+      {key:'cellular-standard',label:'蜂窝网络 · 标准玻璃',isDefault:false,variantDelta:cellularDelta,deltaEvidence:evidence,searchTokens:'蜂窝版 插卡 cellular 标准玻璃',specs:{weight:weight.cellular,networkVersion:'WLAN + 蜂窝网络版',displayGlass:'标准显示屏玻璃',batteryRuntime:'WLAN 浏览网页或观看视频最长 10 小时；蜂窝网络浏览最长 9 小时'}}
+    ];
+    if(allowNano)base.push(
+      {key:'wlan-nano',label:'WLAN · 纳米纹理玻璃',isDefault:false,variantDelta:800,deltaEvidence:'apple-cn-store-price',searchTokens:'WLAN Wi-Fi 纳米纹理 nano',specs:{weight:weight.wlan,networkVersion:'WLAN 版',displayGlass:'纳米纹理显示屏玻璃',batteryRuntime:'WLAN 浏览网页或观看视频最长 10 小时'}},
+      {key:'cellular-nano',label:'蜂窝网络 · 纳米纹理玻璃',isDefault:false,variantDelta:cellularDelta+800,deltaEvidence:evidence==='apple-cn-launch-price'?'apple-cn-store-price':'mixed-prior',searchTokens:'蜂窝版 插卡 cellular 纳米纹理 nano',specs:{weight:weight.cellular,networkVersion:'WLAN + 蜂窝网络版',displayGlass:'纳米纹理显示屏玻璃',batteryRuntime:'WLAN 浏览网页或观看视频最长 10 小时；蜂窝网络浏览最长 9 小时'}}
+    );
+    return base;
+  };
+  products.filter(p=>p.category==='ipad').forEach(p=>p.chipOptions.forEach(option=>{
+    const highStorageNano=nanoIpadIds.has(p.id)&&option.memory.includes('16GB')&&option.storage.some(storage=>storage==='1TB'||storage==='2TB');
+    option.variants=ipadVariants(p.id,highStorageNano);
+  }));
   const ipadPorts={
     ipadpro97:'Lightning × 1；Smart Connector；3.5mm',ipad5:'Lightning × 1；3.5mm',ipadpro105:'Lightning × 1；Smart Connector；3.5mm',ipadpro129_2:'Lightning × 1；Smart Connector；3.5mm',ipad6:'Lightning × 1；3.5mm',
     ipadpro11_1:'USB‑C × 1；Smart Connector；Apple Pencil 磁力接点',ipadpro129_3:'USB‑C × 1；Smart Connector；Apple Pencil 磁力接点',ipadair3:'Lightning × 1；Smart Connector；3.5mm',ipadmini5:'Lightning × 1；3.5mm',ipad7:'Lightning × 1；Smart Connector；3.5mm',
@@ -542,7 +584,8 @@ window.APPLE_DATA=(()=>{
     [['ipadpro11_1','ipadpro129_3','ipadair3','ipadmini5'],'802.11ac；蓝牙 5.0'],
     [['ipadpro11_2','ipadpro129_4','ipadair4','ipadpro11_3','ipadpro129_5','ipadmini6','ipadair5'],'802.11ax；蓝牙 5.0'],
     [['ipad10'],'802.11ax；蓝牙 5.2'],
-    [['ipadpro11_4','ipadpro129_6','ipadair11_m2','ipadair13_m2','ipadpro11_m4','ipadpro13_m4','ipadmini_a17','ipad_a16','ipadair11_m3','ipadair13_m3'],'802.11ax；蓝牙 5.3'],
+    [['ipadpro11_4','ipadpro129_6','ipadair11_m2','ipadair13_m2','ipadpro11_m4','ipadpro13_m4','ipadmini_a17','ipadair11_m3','ipadair13_m3'],'Wi‑Fi 6E（802.11ax；6GHz 依地区可用）；蓝牙 5.3'],
+    [['ipad_a16'],'Wi‑Fi 6（802.11ax）；蓝牙 5.3'],
     [['ipadpro11_m5','ipadpro13_m5','ipadair11_m4','ipadair13_m4'],'Apple N1；802.11be（Wi‑Fi 7）；蓝牙 6；Thread']
   ];
   Object.keys(ipadWeights).forEach(id=>Object.assign(products.find(p=>p.id===id).specs,{weight:ipadWeights[id],ports:ipadPorts[id],pencil:ipadPencil[id]}));
@@ -582,14 +625,14 @@ window.APPLE_DATA=(()=>{
   const macOfficialEnhancements={
     macbook12_2016:{batteryRuntime:'无线上网最长 10 小时 / iTunes 影片播放最长 11 小时',power:'随附 29W USB‑C 电源适配器',ports:'USB‑C（USB 3.1 Gen 1，5Gb/s；DisplayPort 1.2）× 1；3.5mm',brightness:'Apple 当前技术规格页未标注'},
     macbook12_2017:{batteryRuntime:'无线上网最长 10 小时 / iTunes 影片播放最长 12 小时',power:'随附 30W USB‑C 电源适配器',ports:'USB‑C（USB 3.1 Gen 1，5Gb/s；DisplayPort 1.2）× 1；3.5mm',brightness:'Apple 当前技术规格页未标注'},
-    mba13_2017:{batteryRuntime:'无线上网最长 12 小时 / iTunes 影片播放最长 12 小时',power:'随附 45W MagSafe 2 电源适配器',brightness:'Apple 当前技术规格页未标注'},
-    mba13_2018:{batteryRuntime:'无线上网最长 12 小时 / iTunes 影片播放最长 13 小时',power:'随附 30W USB‑C 电源适配器',brightness:'Apple 当前技术规格页未标注'},
-    mba13_2019:{batteryRuntime:'无线上网最长 12 小时 / iTunes 影片播放最长 13 小时',power:'随附 30W USB‑C 电源适配器',brightness:'Apple 当前技术规格页未标注'},
+    mba13_2017:{batteryRuntime:'无线上网最长 12 小时 / iTunes 影片播放最长 12 小时',power:'随附 45W MagSafe 2 电源适配器',brightness:'Apple 当前技术规格页未标注',external:'1 台最高 3840×2160 60Hz'},
+    mba13_2018:{batteryRuntime:'无线上网最长 12 小时 / iTunes 影片播放最长 13 小时',power:'随附 30W USB‑C 电源适配器',brightness:'Apple 当前技术规格页未标注',external:'1 台 5120×2880 60Hz，或 2 台 4096×2304 60Hz'},
+    mba13_2019:{batteryRuntime:'无线上网最长 12 小时 / iTunes 影片播放最长 13 小时',power:'随附 30W USB‑C 电源适配器',brightness:'Apple 当前技术规格页未标注',external:'1 台 5120×2880 60Hz，或 2 台 4096×2304 60Hz'},
     mbp13_2016_2:{batteryRuntime:'无线上网最长 10 小时 / iTunes 影片播放最长 10 小时'},mbp13_2016_4:{batteryRuntime:'无线上网最长 10 小时 / iTunes 影片播放最长 10 小时'},mbp15_2016:{batteryRuntime:'无线上网最长 10 小时 / iTunes 影片播放最长 10 小时'},
     mbp13_2017_2:{batteryRuntime:'无线上网最长 10 小时 / iTunes 影片播放最长 10 小时'},mbp13_2017_4:{batteryRuntime:'无线上网最长 10 小时 / iTunes 影片播放最长 10 小时'},mbp15_2017:{batteryRuntime:'无线上网最长 10 小时 / iTunes 影片播放最长 10 小时'},
     mbp13_2018:{batteryRuntime:'无线上网最长 10 小时 / iTunes 影片播放最长 10 小时'},mbp15_2018:{batteryRuntime:'无线上网最长 10 小时 / iTunes 影片播放最长 10 小时'},
     mbp13_2019_2:{batteryRuntime:'无线上网最长 10 小时 / Apple TV app 影片播放最长 10 小时'},mbp13_2019_4:{batteryRuntime:'无线上网最长 10 小时 / Apple TV app 影片播放最长 10 小时'},mbp15_2019:{batteryRuntime:'无线上网最长 10 小时 / Apple TV app 影片播放最长 10 小时'},mbp16_2019:{batteryRuntime:'无线上网最长 11 小时 / Apple TV app 影片播放最长 11 小时'},
-    mba13_intel_2020:{batteryRuntime:'无线上网最长 11 小时 / Apple TV app 影片播放最长 12 小时',power:'随附 30W USB‑C 电源适配器'},
+    mba13_intel_2020:{batteryRuntime:'无线上网最长 11 小时 / Apple TV app 影片播放最长 12 小时',power:'随附 30W USB‑C 电源适配器',external:'1 台 6016×3384 60Hz，或 1 台 5120×2880 60Hz，或 2 台 4096×2304 60Hz'},
     mbp13_intel_2020_2:{batteryRuntime:'无线上网最长 10 小时 / Apple TV app 影片播放最长 10 小时'},mbp13_intel_2020:{batteryRuntime:'无线上网最长 10 小时 / Apple TV app 影片播放最长 10 小时'},
     mba13_m1:{batteryRuntime:'无线上网最长 15 小时 / Apple TV app 影片播放最长 18 小时',power:'随附 30W USB‑C 电源适配器'},
     mbp13_m1:{batteryRuntime:'无线上网最长 17 小时 / Apple TV app 影片播放最长 20 小时',power:'随附 61W USB‑C 电源适配器'},
@@ -605,9 +648,25 @@ window.APPLE_DATA=(()=>{
     mba15_m5:{batteryRuntime:'流媒体视频播放最长 18 小时 / 无线上网最长 15 小时',power:'随附 40W 动态电源适配器（峰值 60W）；使用 70W 或更高功率适配器可快充'}
   };
   Object.entries(macOfficialEnhancements).forEach(([id,specs])=>Object.assign(products.find(p=>p.id===id).specs,specs));
+  const legacyMacWireless={
+    mbp13_2016_2:'802.11ac；蓝牙 4.2',mbp13_2016_4:'802.11ac；蓝牙 4.2',mbp15_2016:'802.11ac；蓝牙 4.2',
+    mbp13_2017_2:'802.11ac；蓝牙 4.2',mbp13_2017_4:'802.11ac；蓝牙 4.2',mbp15_2017:'802.11ac；蓝牙 4.2',
+    mba13_2017:'802.11ac；蓝牙 4.0',mba13_2018:'802.11ac；蓝牙 4.2',mba13_2019:'802.11ac；蓝牙 4.2'
+  };
+  Object.entries(legacyMacWireless).forEach(([id,wireless])=>{products.find(p=>p.id===id).specs.wireless=wireless});
   const intelBluetooth5=['mbp13_2018','mbp15_2018','mbp13_2019_2','mbp13_2019_4','mbp15_2019','mbp16_2019','mba13_intel_2020','mbp13_intel_2020_2','mbp13_intel_2020'];
   intelBluetooth5.forEach(id=>{products.find(p=>p.id===id).specs.wireless='802.11ac；蓝牙 5.0'});
   products.find(p=>p.id==='macbook_neo').specs.wireless='Wi‑Fi 6E；蓝牙 6';
+  ['mba13_m5','mba15_m5','mbp14_m5pro','mbp16_m5pro'].forEach(id=>{
+    products.find(p=>p.id===id).specs.wireless='Apple N1；Wi‑Fi 7（802.11be）；蓝牙 6；Thread';
+  });
+  const nanoMacIds=new Set(['mbp14_m4','mbp16_m4','mbp14_m5','mbp14_m5pro','mbp16_m5pro']);
+  products.filter(p=>nanoMacIds.has(p.id)).forEach(p=>p.chipOptions.forEach(option=>{
+    option.variants=[
+      {key:'standard',label:'标准显示屏',isDefault:true,variantDelta:0,deltaEvidence:'base',searchTokens:'标准显示屏',specs:{displayGlass:'标准显示屏'}},
+      {key:'nano',label:'纳米纹理显示屏',isDefault:false,variantDelta:1125,deltaEvidence:'apple-cn-store-price',searchTokens:'纳米纹理 nano',specs:{displayGlass:'纳米纹理显示屏'}}
+    ];
+  }));
   products.filter(p=>p.category==='mac').forEach(p=>{
     if(p.specs.refresh==='60Hz')p.specs.refresh='Apple 未标注 Hz';
     if(p.specs.refresh==='ProMotion 最高 120Hz')p.specs.refresh='ProMotion 自适应刷新率最高 120Hz；固定 47.95 / 48 / 50 / 59.94 / 60Hz';

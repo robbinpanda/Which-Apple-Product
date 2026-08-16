@@ -1,0 +1,14 @@
+{
+  "name": "which-apple-product",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A zero-dependency static Apple product comparison website.",
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "node scripts/verify.js",
+    "verify": "node scripts/verify.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

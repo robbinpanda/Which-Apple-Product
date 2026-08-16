@@ -31,6 +31,7 @@ const optionFor=(productId,bench)=>{
 };
 
 const ids=new Set();
+let legalConfigCount=0;
 for(const product of D.products){
   assert.ok(!ids.has(product.id),`产品 id 重复: ${product.id}`);ids.add(product.id);
   const pairKeys=new Set();
@@ -49,6 +50,7 @@ for(const product of D.products){
     }
   }
   assert.ok(pairKeys.size>0,`${product.id} 没有可复位的默认组合`);
+  legalConfigCount+=pairKeys.size;
 }
 
 const mbp14=D.products.find(p=>p.id==='mbp14_2021');
@@ -57,11 +59,20 @@ assert.deepEqual(mbp14.chipOptions.map(x=>x.bench),['m1pro_8_14','m1pro_10_14','
 assert.deepEqual(mbp16.chipOptions.map(x=>x.bench),['m1pro_10_16','m1max_10_24','m1max_10_32']);
 assert.deepEqual(mbp14.chipOptions[0].memory,['16GB','32GB']);
 assert.deepEqual(mbp14.chipOptions[0].storage,['512GB','1TB','2TB','4TB','8TB']);
-assert.equal(D.products.find(p=>p.id==='mbp15_2016').chipOptions.length,9);
-assert.equal(D.products.find(p=>p.id==='mbp15_2017').chipOptions.length,6);
-assert.equal(D.products.find(p=>p.id==='mbp15_2018').chipOptions.length,12);
-assert.equal(D.products.find(p=>p.id==='mbp15_2019').chipOptions.length,12);
-assert.equal(D.products.find(p=>p.id==='mbp16_2019').chipOptions.length,9);
+assert.equal(D.products.find(p=>p.id==='mbp15_2016').chipOptions.length,7);
+assert.equal(D.products.find(p=>p.id==='mbp15_2017').chipOptions.length,5);
+assert.equal(D.products.find(p=>p.id==='mbp15_2018').chipOptions.length,9);
+assert.equal(D.products.find(p=>p.id==='mbp15_2019').chipOptions.length,9);
+assert.equal(D.products.find(p=>p.id==='mbp16_2019').chipOptions.length,11);
+const intel16=D.products.find(p=>p.id==='mbp16_2019');
+assert.equal(intel16.chipOptions.filter(option=>D.benchmarks[option.bench].name.includes('5500M (8GB GDDR6)')).length,3,'2019 16 英寸应有三个 CPU 对应的 5500M 8GB 档');
+assert.ok(intel16.chipOptions.every(option=>option.specs.gpuMemory),'Intel 独显 bundle 必须显式记录显存');
+assert.equal(intel16.specs.refresh,'47.95 / 48 / 50 / 59.94 / 60Hz');
+assert.equal(D.products.find(p=>p.id==='mbp13_intel_2020_2').official,'https://support.apple.com/zh-cn/111981');
+const configNames=id=>D.products.find(p=>p.id===id).chipOptions.map(option=>D.benchmarks[option.bench].name);
+assert.ok(!configNames('mbp15_2016').some(name=>name.includes('2.6GHz · Radeon Pro 455')),'2016 非法 CPU/GPU 组合仍存在');
+assert.ok(!configNames('mbp15_2018').some(name=>name.includes('2.2GHz · Radeon Pro Vega')),'2018 非法 CPU/GPU 组合仍存在');
+assert.ok(!configNames('mbp16_2019').some(name=>name.includes('2.3GHz · Radeon Pro 5300M')),'2019 16 英寸非法起配组合仍存在');
 
 const ipadM1=D.products.find(p=>p.id==='ipadpro11_3').chipOptions;
 assert.deepEqual(ipadM1.map(x=>[x.memory,x.storage]),[
@@ -84,6 +95,21 @@ assert.deepEqual(optionFor('mbp14_m4','m4max_14_32').storage,['1TB','2TB','4TB',
 assert.deepEqual(optionFor('mbp14_m5pro','m5pro_15_16').storage,['1TB','2TB','4TB']);
 assert.deepEqual(optionFor('mbp14_m5pro','m5max_18_32').memory,['36GB']);
 assert.deepEqual(optionFor('mbp14_m5pro','m5max_18_32').storage,['2TB','4TB','8TB']);
+assert.deepEqual(optionFor('mbp16_2021','m1max_10_24').storage,['1TB','2TB','4TB','8TB']);
+assert.deepEqual(optionFor('mbp16_2021','m1max_10_32').storage,['1TB','2TB','4TB','8TB']);
+
+const dynamicMbpIds=['mbp14_2021','mbp16_2021','mbp14_m2','mbp16_m2','mbp14_m3','mbp16_m3','mbp14_m4','mbp16_m4','mbp14_m5','mbp14_m5pro','mbp16_m5pro'];
+for(const id of dynamicMbpIds){
+  const product=D.products.find(p=>p.id===id);
+  for(const option of product.chipOptions){
+    for(const field of ['weight','battery','batteryRuntime','power','ports','external'])assert.ok(option.specs?.[field],`${id}/${option.bench} 缺少动态 ${field}`);
+    for(const field of ['memoryBandwidth','mediaEngine'])assert.ok(D.benchmarks[option.bench].specs?.[field],`${id}/${option.bench} 缺少芯片 ${field}`);
+  }
+}
+assert.equal(optionFor('mbp14_m3','m3_8_10').official,'https://support.apple.com/zh-cn/117735');
+assert.equal(optionFor('mbp14_m4','m4_10_10').official,'https://support.apple.com/zh-cn/121552');
+assert.equal(D.benchmarks.m5pro_15_16.cpu.coreBreakdown,'5 个超级核心 + 10 个性能核心');
+assert.equal(D.benchmarks.m5max_18_40.cpu.coreBreakdown,'6 个超级核心 + 12 个性能核心');
 
 assert.equal(D.products.find(p=>p.id==='16e').chipOptions[0].bench,'a18_4');
 assert.equal(D.products.find(p=>p.id==='17e').chipOptions[0].bench,'a19_4');
@@ -113,10 +139,10 @@ try{require('./app.js')}catch(error){
   uiInitStopped=/null|innerHTML/.test(String(error));
 }
 assert.ok(uiInitStopped,'无 DOM 验证应只在 UI 初始化处停止');
-assert.equal(document.documentElement.dataset.marketAuditCount,'1273','合法配置审计数量变化');
+assert.equal(document.documentElement.dataset.marketAuditCount,String(legalConfigCount),'价格审计必须覆盖全部合法配置');
 assert.equal(document.documentElement.dataset.marketAuditInvalid,'0','存在 0 元、非有限值或倒置价格区间');
 assert.equal(document.documentElement.dataset.marketAuditExact85,'0','转转价格不应继续机械等于闲鱼 × 0.85');
 assert.ok(Number(document.documentElement.dataset.marketAuditMin)>=100,'价格下沿必须为正');
 assert.ok(Number(document.documentElement.dataset.marketAuditMax)<60000,'价格上沿异常失控');
 
-console.log(`OK: ${D.products.length} 款机型，${referenced.size} 个已引用芯片 / GPU 配置，1273 个合法配置价格全部有效。`);
+console.log(`OK: ${D.products.length} 款机型，${referenced.size} 个已引用芯片 / GPU 配置，${legalConfigCount} 个合法配置价格与动态规格全部有效。`);

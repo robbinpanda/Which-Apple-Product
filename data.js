@@ -146,16 +146,42 @@ window.APPLE_DATA=(()=>{
   addIntel('intel_mbp15_2018_vega16','Core i9 2.9GHz',6,1323,4979,2413,10337,'Radeon Pro Vega 16',16,20400,2.6,70,381);
   addIntel('intel_mbp15_2019_vega16','Core i9 2.4GHz',8,1383,6307,2505,13930,'Radeon Pro Vega 16',16,20400,2.6,70,459);
 
+  /* 芯片固有规格只声明一次；机身相关的重量、续航、电源、端口和外显
+     由下方每个 MacBook Pro 芯片选项单独覆盖。 */
+  const MEDIA_SINGLE='1×视频解码 + 1×视频编码 + 1×ProRes 编解码';
+  const MEDIA_SINGLE_AV1=MEDIA_SINGLE+'；AV1 解码';
+  const MEDIA_DOUBLE='1×视频解码 + 2×视频编码 + 2×ProRes 编解码';
+  const MEDIA_DOUBLE_AV1=MEDIA_DOUBLE+'；AV1 解码';
+  const setChipSpecs=(ids,specs)=>ids.forEach(id=>{if(benchmarks[id])benchmarks[id].specs={...(benchmarks[id].specs||{}),...specs}});
+  setChipSpecs(['m1pro_8_14','m1pro_10_14','m1pro_10_16'],{memoryBandwidth:'200GB/s',mediaEngine:MEDIA_SINGLE});
+  setChipSpecs(['m1max_10_24','m1max_10_32'],{memoryBandwidth:'400GB/s',mediaEngine:MEDIA_DOUBLE});
+  setChipSpecs(['m2pro_10_16','m2pro_12_19'],{memoryBandwidth:'200GB/s',mediaEngine:MEDIA_SINGLE});
+  setChipSpecs(['m2max_12_30','m2max_12_38'],{memoryBandwidth:'400GB/s',mediaEngine:MEDIA_DOUBLE});
+  setChipSpecs(['m3_8_10'],{memoryBandwidth:'100GB/s',mediaEngine:MEDIA_SINGLE_AV1});
+  setChipSpecs(['m3pro_11_14','m3pro_12_18'],{memoryBandwidth:'150GB/s',mediaEngine:MEDIA_SINGLE_AV1});
+  setChipSpecs(['m3max_14_30'],{memoryBandwidth:'300GB/s',mediaEngine:MEDIA_DOUBLE_AV1});
+  setChipSpecs(['m3max_16_40'],{memoryBandwidth:'400GB/s',mediaEngine:MEDIA_DOUBLE_AV1});
+  setChipSpecs(['m4_10_10'],{memoryBandwidth:'120GB/s',mediaEngine:MEDIA_SINGLE_AV1});
+  setChipSpecs(['m4pro_12_16','m4pro_14_20'],{memoryBandwidth:'273GB/s',mediaEngine:MEDIA_SINGLE_AV1});
+  setChipSpecs(['m4max_14_32'],{memoryBandwidth:'410GB/s',mediaEngine:MEDIA_DOUBLE_AV1});
+  setChipSpecs(['m4max_16_40'],{memoryBandwidth:'546GB/s',mediaEngine:MEDIA_DOUBLE_AV1});
+  setChipSpecs(['m5_10_10'],{memoryBandwidth:'153GB/s',mediaEngine:MEDIA_SINGLE_AV1,neuralAccelerator:'支持'});
+  setChipSpecs(['m5pro_15_16','m5pro_18_20'],{memoryBandwidth:'307GB/s',mediaEngine:MEDIA_SINGLE_AV1,neuralAccelerator:'支持'});
+  setChipSpecs(['m5max_18_32'],{memoryBandwidth:'460GB/s',mediaEngine:MEDIA_DOUBLE_AV1,neuralAccelerator:'支持'});
+  setChipSpecs(['m5max_18_40'],{memoryBandwidth:'614GB/s',mediaEngine:MEDIA_DOUBLE_AV1,neuralAccelerator:'支持'});
+  Object.assign(benchmarks.m5_10_10.cpu,{coreBreakdown:'4 个超级核心 + 6 个能效核心'});
+  Object.assign(benchmarks.m5pro_15_16.cpu,{coreBreakdown:'5 个超级核心 + 10 个性能核心'});
+  ['m5pro_18_20','m5max_18_32','m5max_18_40'].forEach(id=>Object.assign(benchmarks[id].cpu,{coreBreakdown:'6 个超级核心 + 12 个性能核心'}));
+
   /* bundleDelta 是芯片档整包相对阶梯，视图层会按机龄折旧；它不是实时二手差价。 */
   const cfg=(bench,memory=[],storage=[],bundleDelta=0,note='')=>({bench,memory,storage,bundleDelta,note});
-  const intelMatrix=(prefix,cpuChoices,gpuChoices,memory,storage)=>{
-    const out=[];
-    cpuChoices.forEach((c,ci)=>gpuChoices.forEach((g,gi)=>{
-      const id=`${prefix}_c${ci}_g${gi}`,cpuSource=benchmarks[c.source],gpuSource=benchmarks[g.source];
-      benchmarks[id]=profile(`${c.label} · ${g.label}`,{...cpuSource.cpu},{...gpuSource.gpu},cpuSource.source,gpuSource.gpuSource,'calibrated','CPU 与独显为该机型官方独立选项；两项分别采用对应聚合跑分后再组成当前配置。');
-      out.push(cfg(id,memory,storage,(c.delta||0)+(g.delta||0)));
-    }));
-    return out;
+  const macCfg=(bench,memory=[],storage=[],bundleDelta=0,specs={},official='')=>({
+    ...cfg(bench,memory,storage,bundleDelta),specs,...(official?{official}:{})
+  });
+  const intelBundle=(id,cpuSource,cpuLabel,gpuSource,gpuLabel,memory,storage,bundleDelta,gpuMemory)=>{
+    const cpuBench=benchmarks[cpuSource],gpuBench=benchmarks[gpuSource];
+    benchmarks[id]=profile(`${cpuLabel} · ${gpuLabel} (${gpuMemory})`,{...cpuBench.cpu},{...gpuBench.gpu},cpuBench.source,gpuBench.gpuSource,'calibrated','Apple 官方合法 CPU、独显与显存组合；CPU/GPU 分别采用对应聚合跑分。');
+    return macCfg(id,memory,storage,bundleDelta,{gpuMemory});
   };
   const P16=['16GB','32GB'],PMAX=['32GB','64GB'],SSD8=['512GB','1TB','2TB','4TB','8TB'];
   /* 旧四元数组的后两项曾是“闲鱼 × 0.85”的机械值，已明确废弃；只保留前两项作相对价格阶梯种子。 */
@@ -257,48 +283,75 @@ window.APPLE_DATA=(()=>{
 
   const macSpec=(display,resolution,refresh,weight,battery,ports,brightness='500 尼特',camera='720p FaceTime HD',wireless='Wi‑Fi 5；蓝牙 4.x',external='见 Apple 官方规格')=>({display,resolution,refresh,weight,battery,ports,brightness,camera,wireless,external});
   const S256=['256GB','512GB'],S512=['512GB','1TB','2TB'],S4=['512GB','1TB','2TB','4TB'];
+  const S256_4=['256GB','512GB','1TB','2TB','4TB'],S512_8=['512GB','1TB','2TB','4TB','8TB'],S1_8=['1TB','2TB','4TB','8TB'];
 
   /* Intel Mac：拆分不同端口 / 尺寸机型，芯片与独显仍在同一机型行内切换。 */
   products.push(
     mac('macbook12_2016','2016-04-19','MacBook','MacBook 12 英寸（2016）',MACBOOK_INDEX,[cfg('intel_2016_mb_m3',['8GB'],S256),cfg('intel_2016_mb_m5',['8GB'],S256,500),cfg('intel_2016_mb_m7',['8GB'],S256,900)],[900,1450,760,1230],macSpec('12 英寸 Retina','2304 × 1440','60Hz','0.92kg','41.4Wh','USB‑C × 1；3.5mm','300 尼特')),
     mac('mbp13_2016_2','2016-10-27','Pro 13','MacBook Pro 13 英寸（2016，双雷雳 3）','https://support.apple.com/zh-cn/111999',[cfg('intel_mbp13_2016_2_i5',['8GB','16GB'],['256GB','512GB','1TB']),cfg('intel_mbp13_2016_2_i7',['8GB','16GB'],['256GB','512GB','1TB'],700)],[1150,1850,980,1570],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','54.5Wh','雷雳 3 × 2；3.5mm')),
     mac('mbp13_2016_4','2016-10-27','Pro 13','MacBook Pro 13 英寸（2016，四雷雳 3）','https://support.apple.com/zh-cn/112003',[cfg('intel_mbp13_2016_4_i5',['8GB','16GB'],['256GB','512GB','1TB']),cfg('intel_mbp13_2016_4_i5hi',['8GB','16GB'],['256GB','512GB','1TB'],400),cfg('intel_mbp13_2016_4_i7',['8GB','16GB'],['256GB','512GB','1TB'],800)],[1350,2200,1150,1870],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','49.2Wh','雷雳 3 × 4；3.5mm')),
-    mac('mbp15_2016','2016-10-27','Pro 15','MacBook Pro 15 英寸（2016）','https://support.apple.com/zh-cn/111975',intelMatrix('mx15_2016',[
-      {source:'intel_mbp15_2016_450',label:'Core i7 2.6GHz',delta:0},{source:'intel_mbp15_2016_455',label:'Core i7 2.7GHz',delta:450},{source:'intel_mbp15_2016_460',label:'Core i7 2.9GHz',delta:900}
-    ],[
-      {source:'intel_mbp15_2016_450',label:'Radeon Pro 450',delta:0},{source:'intel_mbp15_2016_455',label:'Radeon Pro 455',delta:400},{source:'intel_mbp15_2016_460',label:'Radeon Pro 460',delta:850}
-    ],['16GB'],['256GB','512GB','1TB','2TB']),[1800,2850,1530,2420],macSpec('15.4 英寸 Retina','2880 × 1800','60Hz','1.83kg','76Wh','雷雳 3 × 4；3.5mm')),
+    mac('mbp15_2016','2016-10-27','Pro 15','MacBook Pro 15 英寸（2016）','https://support.apple.com/zh-cn/111975',[
+      intelBundle('mx15_2016_26_450','intel_mbp15_2016_450','Core i7 2.6GHz','intel_mbp15_2016_450','Radeon Pro 450',['16GB'],['256GB','512GB','1TB','2TB'],0,'2GB GDDR5'),
+      intelBundle('mx15_2016_26_460','intel_mbp15_2016_450','Core i7 2.6GHz','intel_mbp15_2016_460','Radeon Pro 460',['16GB'],['256GB','512GB','1TB','2TB'],850,'4GB GDDR5'),
+      intelBundle('mx15_2016_27_455','intel_mbp15_2016_455','Core i7 2.7GHz','intel_mbp15_2016_455','Radeon Pro 455',['16GB'],S512,850,'2GB GDDR5'),
+      intelBundle('mx15_2016_27_460','intel_mbp15_2016_455','Core i7 2.7GHz','intel_mbp15_2016_460','Radeon Pro 460',['16GB'],S512,1300,'4GB GDDR5'),
+      intelBundle('mx15_2016_29_450','intel_mbp15_2016_460','Core i7 2.9GHz','intel_mbp15_2016_450','Radeon Pro 450',['16GB'],['256GB','512GB','1TB','2TB'],900,'2GB GDDR5'),
+      intelBundle('mx15_2016_29_455','intel_mbp15_2016_460','Core i7 2.9GHz','intel_mbp15_2016_455','Radeon Pro 455',['16GB'],S512,1300,'2GB GDDR5'),
+      intelBundle('mx15_2016_29_460','intel_mbp15_2016_460','Core i7 2.9GHz','intel_mbp15_2016_460','Radeon Pro 460',['16GB'],['256GB','512GB','1TB','2TB'],1750,'4GB GDDR5')
+    ],[1800,2850,1530,2420],macSpec('15.4 英寸 Retina','2880 × 1800','60Hz','1.83kg','76Wh','雷雳 3 × 4；3.5mm')),
     mac('macbook12_2017','2017-06-05','MacBook','MacBook 12 英寸（2017）',MACBOOK_INDEX,[cfg('intel_2017_mb_m3',['8GB','16GB'],S256),cfg('intel_2017_mb_i5',['8GB','16GB'],S256,500),cfg('intel_2017_mb_i7',['8GB','16GB'],S256,900)],[1100,1750,940,1490],macSpec('12 英寸 Retina','2304 × 1440','60Hz','0.92kg','41.4Wh','USB‑C × 1；3.5mm','300 尼特')),
     mac('mba13_2017','2017-06-05','Air','MacBook Air 13 英寸（2017）',MBA_INDEX,[cfg('intel_air_old_i5',['8GB'],['128GB','256GB','512GB']),cfg('intel_air_old_i7',['8GB'],['128GB','256GB','512GB'],500)],[900,1450,760,1230],macSpec('13.3 英寸','1440 × 900','60Hz','1.35kg','54Wh','USB‑A × 2；雷雳 2 × 1；SDXC；MagSafe 2；3.5mm','300 尼特')),
-    mac('mbp13_2017_2','2017-06-05','Pro 13','MacBook Pro 13 英寸（2017，双雷雳 3）',MBP_INDEX,[cfg('intel_mbp13_2017_2_i5',['8GB','16GB'],['128GB','256GB','512GB','1TB']),cfg('intel_mbp13_2017_2_i7',['8GB','16GB'],['128GB','256GB','512GB','1TB'],750)],[1300,2050,1100,1740],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','54.5Wh','雷雳 3 × 2；3.5mm')),
-    mac('mbp13_2017_4','2017-06-05','Pro 13','MacBook Pro 13 英寸（2017，四雷雳 3）',MBP_INDEX,[cfg('intel_mbp13_2017_4_i5',['8GB','16GB'],['256GB','512GB','1TB']),cfg('intel_mbp13_2017_4_i5hi',['8GB','16GB'],['256GB','512GB','1TB'],400),cfg('intel_mbp13_2017_4_i7',['8GB','16GB'],['256GB','512GB','1TB'],800)],[1550,2400,1320,2040],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','49.2Wh','雷雳 3 × 4；3.5mm')),
-    mac('mbp15_2017','2017-06-05','Pro 15','MacBook Pro 15 英寸（2017）',MBP_INDEX,intelMatrix('mx15_2017',[
-      {source:'intel_mbp15_2017_555',label:'Core i7 2.8GHz',delta:0},{source:'intel_mbp15_2017_560',label:'Core i7 2.9GHz',delta:450},{source:'intel_mbp15_2017_i7hi',label:'Core i7 3.1GHz',delta:900}
-    ],[
-      {source:'intel_mbp15_2017_555',label:'Radeon Pro 555',delta:0},{source:'intel_mbp15_2017_560',label:'Radeon Pro 560',delta:650}
-    ],['16GB'],['256GB','512GB','1TB','2TB']),[2100,3300,1780,2810],macSpec('15.4 英寸 Retina','2880 × 1800','60Hz','1.83kg','76Wh','雷雳 3 × 4；3.5mm')),
+    mac('mbp13_2017_2','2017-06-05','Pro 13','MacBook Pro 13 英寸（2017，双雷雳 3）','https://support.apple.com/zh-cn/111951',[cfg('intel_mbp13_2017_2_i5',['8GB','16GB'],['128GB','256GB','512GB','1TB']),cfg('intel_mbp13_2017_2_i7',['8GB','16GB'],['128GB','256GB','512GB','1TB'],750)],[1300,2050,1100,1740],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','54.5Wh','雷雳 3 × 2；3.5mm')),
+    mac('mbp13_2017_4','2017-06-05','Pro 13','MacBook Pro 13 英寸（2017，四雷雳 3）','https://support.apple.com/zh-cn/111972',[cfg('intel_mbp13_2017_4_i5',['8GB','16GB'],['256GB','512GB','1TB']),cfg('intel_mbp13_2017_4_i5hi',['8GB','16GB'],['256GB','512GB','1TB'],400),cfg('intel_mbp13_2017_4_i7',['8GB','16GB'],['256GB','512GB','1TB'],800)],[1550,2400,1320,2040],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','49.2Wh','雷雳 3 × 4；3.5mm')),
+    mac('mbp15_2017','2017-06-05','Pro 15','MacBook Pro 15 英寸（2017）','https://support.apple.com/zh-cn/111947',[
+      intelBundle('mx15_2017_28_555','intel_mbp15_2017_555','Core i7 2.8GHz','intel_mbp15_2017_555','Radeon Pro 555',['16GB'],['256GB','512GB','1TB','2TB'],0,'2GB GDDR5'),
+      intelBundle('mx15_2017_28_560','intel_mbp15_2017_555','Core i7 2.8GHz','intel_mbp15_2017_560','Radeon Pro 560',['16GB'],['256GB','512GB','1TB','2TB'],650,'4GB GDDR5'),
+      intelBundle('mx15_2017_29_560','intel_mbp15_2017_560','Core i7 2.9GHz','intel_mbp15_2017_560','Radeon Pro 560',['16GB'],S512,1100,'4GB GDDR5'),
+      intelBundle('mx15_2017_31_555','intel_mbp15_2017_i7hi','Core i7 3.1GHz','intel_mbp15_2017_555','Radeon Pro 555',['16GB'],['256GB','512GB','1TB','2TB'],900,'2GB GDDR5'),
+      intelBundle('mx15_2017_31_560','intel_mbp15_2017_i7hi','Core i7 3.1GHz','intel_mbp15_2017_560','Radeon Pro 560',['16GB'],['256GB','512GB','1TB','2TB'],1550,'4GB GDDR5')
+    ],[2100,3300,1780,2810],macSpec('15.4 英寸 Retina','2880 × 1800','60Hz','1.83kg','76Wh','雷雳 3 × 4；3.5mm')),
     mac('mba13_2018','2018-11-07','Air','MacBook Air 13 英寸（Retina，2018）',MBA_INDEX,[cfg('intel_air_2018',['8GB','16GB'],['128GB','256GB','512GB','1.5TB'])],[1250,1950,1060,1660],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.25kg','50.3Wh','雷雳 3 × 2；3.5mm','300 尼特')),
-    mac('mbp13_2018','2018-07-12','Pro 13','MacBook Pro 13 英寸（2018）',MBP_INDEX,[cfg('intel_mbp13_2018_i5',['8GB','16GB'],['256GB','512GB','1TB','2TB']),cfg('intel_mbp13_2018_i7',['8GB','16GB'],['256GB','512GB','1TB','2TB'],900)],[1900,2950,1610,2510],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','58Wh','雷雳 3 × 4；3.5mm')),
-    mac('mbp15_2018','2018-07-12','Pro 15','MacBook Pro 15 英寸（2018）',MBP_INDEX,intelMatrix('mx15_2018',[
-      {source:'intel_mbp15_2018_555x',label:'Core i7 2.2GHz',delta:0},{source:'intel_mbp15_2018_560x',label:'Core i7 2.6GHz',delta:650},{source:'intel_mbp15_2018_vega',label:'Core i9 2.9GHz',delta:1250}
-    ],[
-      {source:'intel_mbp15_2018_555x',label:'Radeon Pro 555X',delta:0},{source:'intel_mbp15_2018_560x',label:'Radeon Pro 560X',delta:650},{source:'intel_mbp15_2018_vega16',label:'Radeon Pro Vega 16',delta:1250},{source:'intel_mbp15_2018_vega',label:'Radeon Pro Vega 20',delta:1650}
-    ],['16GB','32GB'],S4),[2700,4300,2290,3660],macSpec('15.4 英寸 Retina','2880 × 1800','60Hz','1.83kg','83.6Wh','雷雳 3 × 4；3.5mm')),
+    mac('mbp13_2018','2018-07-12','Pro 13','MacBook Pro 13 英寸（2018）','https://support.apple.com/zh-cn/111925',[cfg('intel_mbp13_2018_i5',['8GB','16GB'],['256GB','512GB','1TB','2TB']),cfg('intel_mbp13_2018_i7',['8GB','16GB'],['256GB','512GB','1TB','2TB'],900)],[1900,2950,1610,2510],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','58Wh','雷雳 3 × 4；3.5mm')),
+    mac('mbp15_2018','2018-07-12','Pro 15','MacBook Pro 15 英寸（2018）','https://support.apple.com/zh-cn/111949',[
+      intelBundle('mx15_2018_22_555x','intel_mbp15_2018_555x','Core i7 2.2GHz','intel_mbp15_2018_555x','Radeon Pro 555X',['16GB','32GB'],S256_4,0,'4GB GDDR5'),
+      intelBundle('mx15_2018_22_560x','intel_mbp15_2018_555x','Core i7 2.2GHz','intel_mbp15_2018_560x','Radeon Pro 560X',['16GB','32GB'],S256_4,650,'4GB GDDR5'),
+      intelBundle('mx15_2018_26_560x','intel_mbp15_2018_560x','Core i7 2.6GHz','intel_mbp15_2018_560x','Radeon Pro 560X',['16GB','32GB'],S4,1300,'4GB GDDR5'),
+      intelBundle('mx15_2018_26_v16','intel_mbp15_2018_560x','Core i7 2.6GHz','intel_mbp15_2018_vega16','Radeon Pro Vega 16',['16GB','32GB'],S4,1900,'4GB HBM2'),
+      intelBundle('mx15_2018_26_v20','intel_mbp15_2018_560x','Core i7 2.6GHz','intel_mbp15_2018_vega','Radeon Pro Vega 20',['16GB','32GB'],S4,2300,'4GB HBM2'),
+      intelBundle('mx15_2018_29_555x','intel_mbp15_2018_vega','Core i9 2.9GHz','intel_mbp15_2018_555x','Radeon Pro 555X',['16GB','32GB'],S256_4,1250,'4GB GDDR5'),
+      intelBundle('mx15_2018_29_560x','intel_mbp15_2018_vega','Core i9 2.9GHz','intel_mbp15_2018_560x','Radeon Pro 560X',['16GB','32GB'],S256_4,1900,'4GB GDDR5'),
+      intelBundle('mx15_2018_29_v16','intel_mbp15_2018_vega','Core i9 2.9GHz','intel_mbp15_2018_vega16','Radeon Pro Vega 16',['16GB','32GB'],S4,2500,'4GB HBM2'),
+      intelBundle('mx15_2018_29_v20','intel_mbp15_2018_vega','Core i9 2.9GHz','intel_mbp15_2018_vega','Radeon Pro Vega 20',['16GB','32GB'],S4,2900,'4GB HBM2')
+    ],[2700,4300,2290,3660],macSpec('15.4 英寸 Retina','2880 × 1800','60Hz','1.83kg','83.6Wh','雷雳 3 × 4；3.5mm')),
     mac('mba13_2019','2019-07-09','Air','MacBook Air 13 英寸（Retina，2019）',MBA_INDEX,[cfg('intel_air_2018',['8GB','16GB'],['128GB','256GB','512GB','1TB'])],[1450,2200,1230,1870],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.25kg','49.9Wh','雷雳 3 × 2；3.5mm','400 尼特')),
-    mac('mbp13_2019_2','2019-07-09','Pro 13','MacBook Pro 13 英寸（2019，双雷雳 3）',MBP_INDEX,[cfg('intel_mbp13_2019_2_i5',['8GB','16GB'],['128GB','256GB','512GB','1TB']),cfg('intel_mbp13_2019_2_i7',['8GB','16GB'],['128GB','256GB','512GB','1TB'],850)],[1850,2800,1570,2380],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','58.2Wh','雷雳 3 × 2；3.5mm')),
-    mac('mbp13_2019_4','2019-05-21','Pro 13','MacBook Pro 13 英寸（2019，四雷雳 3）',MBP_INDEX,[cfg('intel_mbp13_2019_4_i5',['8GB','16GB'],S512),cfg('intel_mbp13_2019_4_i7',['8GB','16GB'],S512,950)],[2250,3400,1910,2890],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','58Wh','雷雳 3 × 4；3.5mm')),
-    mac('mbp15_2019','2019-05-21','Pro 15','MacBook Pro 15 英寸（2019）',MBP_INDEX,intelMatrix('mx15_2019',[
-      {source:'intel_mbp15_2019_555x',label:'Core i7 2.6GHz',delta:0},{source:'intel_mbp15_2019_560x',label:'Core i9 2.3GHz',delta:750},{source:'intel_mbp15_2019_vega',label:'Core i9 2.4GHz',delta:1250}
-    ],[
-      {source:'intel_mbp15_2019_555x',label:'Radeon Pro 555X',delta:0},{source:'intel_mbp15_2019_560x',label:'Radeon Pro 560X',delta:650},{source:'intel_mbp15_2019_vega16',label:'Radeon Pro Vega 16',delta:1250},{source:'intel_mbp15_2019_vega',label:'Radeon Pro Vega 20',delta:1650}
-    ],['16GB','32GB'],S4),[3100,4900,2630,4170],macSpec('15.4 英寸 Retina','2880 × 1800','60Hz','1.83kg','83.6Wh','雷雳 3 × 4；3.5mm')),
-    mac('mbp16_2019','2019-11-13','Pro 16','MacBook Pro 16 英寸（2019）',MBP_INDEX,intelMatrix('mx16_2019',[
-      {source:'intel_mbp16_5300',label:'Core i7 2.6GHz',delta:0},{source:'intel_mbp16_5500',label:'Core i9 2.3GHz',delta:800},{source:'intel_mbp16_5600',label:'Core i9 2.4GHz',delta:1300}
-    ],[
-      {source:'intel_mbp16_5300',label:'Radeon Pro 5300M',delta:0},{source:'intel_mbp16_5500',label:'Radeon Pro 5500M',delta:1100},{source:'intel_mbp16_5600',label:'Radeon Pro 5600M',delta:4300}
-    ],['16GB','32GB','64GB'],['512GB','1TB','2TB','4TB','8TB']),[3900,6200,3310,5270],macSpec('16 英寸 Retina','3072 × 1920','60Hz','2.0kg','100Wh','雷雳 3 × 4；3.5mm')),
+    mac('mbp13_2019_2','2019-07-09','Pro 13','MacBook Pro 13 英寸（2019，双雷雳 3）','https://support.apple.com/zh-cn/111945',[cfg('intel_mbp13_2019_2_i5',['8GB','16GB'],['128GB','256GB','512GB','1TB']),cfg('intel_mbp13_2019_2_i7',['8GB','16GB'],['128GB','256GB','512GB','1TB'],850)],[1850,2800,1570,2380],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','58.2Wh','雷雳 3 × 2；3.5mm')),
+    mac('mbp13_2019_4','2019-05-21','Pro 13','MacBook Pro 13 英寸（2019，四雷雳 3）','https://support.apple.com/zh-cn/111997',[cfg('intel_mbp13_2019_4_i5',['8GB','16GB'],S512),cfg('intel_mbp13_2019_4_i7',['8GB','16GB'],S512,950)],[2250,3400,1910,2890],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.37kg','58Wh','雷雳 3 × 4；3.5mm')),
+    mac('mbp15_2019','2019-05-21','Pro 15','MacBook Pro 15 英寸（2019）','https://support.apple.com/zh-cn/111941',[
+      intelBundle('mx15_2019_26_555x','intel_mbp15_2019_555x','Core i7 2.6GHz','intel_mbp15_2019_555x','Radeon Pro 555X',['16GB','32GB'],S256_4,0,'4GB GDDR5'),
+      intelBundle('mx15_2019_26_560x','intel_mbp15_2019_555x','Core i7 2.6GHz','intel_mbp15_2019_560x','Radeon Pro 560X',['16GB','32GB'],S256_4,650,'4GB GDDR5'),
+      intelBundle('mx15_2019_23_560x','intel_mbp15_2019_560x','Core i9 2.3GHz','intel_mbp15_2019_560x','Radeon Pro 560X',['16GB','32GB'],S4,1400,'4GB GDDR5'),
+      intelBundle('mx15_2019_23_v16','intel_mbp15_2019_560x','Core i9 2.3GHz','intel_mbp15_2019_vega16','Radeon Pro Vega 16',['16GB','32GB'],S4,2000,'4GB HBM2'),
+      intelBundle('mx15_2019_23_v20','intel_mbp15_2019_560x','Core i9 2.3GHz','intel_mbp15_2019_vega','Radeon Pro Vega 20',['16GB','32GB'],S4,2400,'4GB HBM2'),
+      intelBundle('mx15_2019_24_555x','intel_mbp15_2019_vega','Core i9 2.4GHz','intel_mbp15_2019_555x','Radeon Pro 555X',['16GB','32GB'],S256_4,1250,'4GB GDDR5'),
+      intelBundle('mx15_2019_24_560x','intel_mbp15_2019_vega','Core i9 2.4GHz','intel_mbp15_2019_560x','Radeon Pro 560X',['16GB','32GB'],S256_4,1900,'4GB GDDR5'),
+      intelBundle('mx15_2019_24_v16','intel_mbp15_2019_vega','Core i9 2.4GHz','intel_mbp15_2019_vega16','Radeon Pro Vega 16',['16GB','32GB'],S4,2500,'4GB HBM2'),
+      intelBundle('mx15_2019_24_v20','intel_mbp15_2019_vega','Core i9 2.4GHz','intel_mbp15_2019_vega','Radeon Pro Vega 20',['16GB','32GB'],S4,2900,'4GB HBM2')
+    ],[3100,4900,2630,4170],macSpec('15.4 英寸 Retina','2880 × 1800','60Hz','1.83kg','83.6Wh','雷雳 3 × 4；3.5mm')),
+    mac('mbp16_2019','2019-11-13','Pro 16','MacBook Pro 16 英寸（2019）','https://support.apple.com/zh-cn/111932',[
+      intelBundle('mx16_2019_26_5300','intel_mbp16_5300','Core i7 2.6GHz','intel_mbp16_5300','Radeon Pro 5300M',['16GB','32GB','64GB'],S512_8,0,'4GB GDDR6'),
+      intelBundle('mx16_2019_26_5500_4','intel_mbp16_5300','Core i7 2.6GHz','intel_mbp16_5500','Radeon Pro 5500M',['16GB','32GB','64GB'],S512_8,1100,'4GB GDDR6'),
+      intelBundle('mx16_2019_26_5500_8','intel_mbp16_5300','Core i7 2.6GHz','intel_mbp16_5500','Radeon Pro 5500M',['16GB','32GB','64GB'],S512_8,1800,'8GB GDDR6'),
+      intelBundle('mx16_2019_26_5600','intel_mbp16_5300','Core i7 2.6GHz','intel_mbp16_5600','Radeon Pro 5600M',['16GB','32GB','64GB'],S512_8,4300,'8GB HBM2'),
+      intelBundle('mx16_2019_23_5500_4','intel_mbp16_5500','Core i9 2.3GHz','intel_mbp16_5500','Radeon Pro 5500M',['16GB','32GB','64GB'],S1_8,1900,'4GB GDDR6'),
+      intelBundle('mx16_2019_23_5500_8','intel_mbp16_5500','Core i9 2.3GHz','intel_mbp16_5500','Radeon Pro 5500M',['16GB','32GB','64GB'],S1_8,2600,'8GB GDDR6'),
+      intelBundle('mx16_2019_23_5600','intel_mbp16_5500','Core i9 2.3GHz','intel_mbp16_5600','Radeon Pro 5600M',['16GB','32GB','64GB'],S1_8,5100,'8GB HBM2'),
+      intelBundle('mx16_2019_24_5300','intel_mbp16_5600','Core i9 2.4GHz','intel_mbp16_5300','Radeon Pro 5300M',['16GB','32GB','64GB'],S512_8,1300,'4GB GDDR6'),
+      intelBundle('mx16_2019_24_5500_4','intel_mbp16_5600','Core i9 2.4GHz','intel_mbp16_5500','Radeon Pro 5500M',['16GB','32GB','64GB'],S512_8,2400,'4GB GDDR6'),
+      intelBundle('mx16_2019_24_5500_8','intel_mbp16_5600','Core i9 2.4GHz','intel_mbp16_5500','Radeon Pro 5500M',['16GB','32GB','64GB'],S512_8,3100,'8GB GDDR6'),
+      intelBundle('mx16_2019_24_5600','intel_mbp16_5600','Core i9 2.4GHz','intel_mbp16_5600','Radeon Pro 5600M',['16GB','32GB','64GB'],S512_8,5600,'8GB HBM2')
+    ],[3900,6200,3310,5270],macSpec('16 英寸 Retina','3072 × 1920','47.95 / 48 / 50 / 59.94 / 60Hz','2.0kg','100Wh','雷雳 3 × 4；3.5mm')),
     mac('mba13_intel_2020','2020-03-18','Air','MacBook Air 13 英寸（Intel，2020）','https://support.apple.com/zh-cn/111991',[cfg('intel_air_2020_i3',['8GB','16GB'],['256GB','512GB','1TB','2TB']),cfg('intel_air_2020_i5',['8GB','16GB'],['256GB','512GB','1TB','2TB'],500),cfg('intel_air_2020_i7',['8GB','16GB'],['256GB','512GB','1TB','2TB'],900)],[1850,2900,1570,2470],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.29kg','49.9Wh','雷雳 3 × 2；3.5mm','400 尼特')),
-    mac('mbp13_intel_2020_2','2020-05-04','Pro 13','MacBook Pro 13 英寸（Intel 2020，双雷雳 3）','https://support.apple.com/zh-cn/111339',[cfg('intel_mbp13_2019_2_i5',['8GB','16GB'],['256GB','512GB','1TB','2TB']),cfg('intel_mbp13_2019_2_i7',['8GB','16GB'],['256GB','512GB','1TB','2TB'],850)],[2250,3500,1910,2980],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.4kg','58.2Wh','雷雳 3 × 2；3.5mm')),
+    mac('mbp13_intel_2020_2','2020-05-04','Pro 13','MacBook Pro 13 英寸（Intel 2020，双雷雳 3）','https://support.apple.com/zh-cn/111981',[cfg('intel_mbp13_2019_2_i5',['8GB','16GB'],['256GB','512GB','1TB','2TB']),cfg('intel_mbp13_2019_2_i7',['8GB','16GB'],['256GB','512GB','1TB','2TB'],850)],[2250,3500,1910,2980],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.4kg','58.2Wh','雷雳 3 × 2；3.5mm')),
     mac('mbp13_intel_2020','2020-05-04','Pro 13','MacBook Pro 13 英寸（Intel 2020，四雷雳 3）','https://support.apple.com/zh-cn/111339',[cfg('intel_mbp13_2020_i5',['16GB','32GB'],['512GB','1TB','2TB','4TB']),cfg('intel_mbp13_2020_i7',['16GB','32GB'],['512GB','1TB','2TB','4TB'],1100)],[2800,4300,2380,3660],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.4kg','58Wh','雷雳 3 × 4；3.5mm'))
   );
 
@@ -307,36 +360,76 @@ window.APPLE_DATA=(()=>{
     mac('mba13_m1','2020-11-17','Air','MacBook Air 13 英寸（M1，2020）','https://support.apple.com/zh-cn/111883',[cfg('m1_8_7',['8GB','16GB'],S256),cfg('m1_8_8',['8GB','16GB'],S256,500)],[3000,4300,2550,3660],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.29kg','49.9Wh','雷雳 / USB 4 × 2；3.5mm','400 尼特','720p FaceTime HD','Wi‑Fi 6；蓝牙 5.0','1 台最高 6K 60Hz')),
     mac('mbp13_m1','2020-11-17','Pro 13','MacBook Pro 13 英寸（M1，2020）','https://support.apple.com/zh-cn/111893',[cfg('m1_8_8',['8GB','16GB'],['256GB','512GB','1TB','2TB'])],[3600,5100,3060,4340],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.4kg','58.2Wh','雷雳 / USB 4 × 2；3.5mm','500 尼特','720p FaceTime HD','Wi‑Fi 6；蓝牙 5.0','1 台最高 6K 60Hz')),
     mac('mbp14_2021','2021-10-26','Pro 14','MacBook Pro 14 英寸（2021）','https://support.apple.com/zh-cn/111902',[
-      cfg('m1pro_8_14',P16,SSD8),
-      cfg('m1pro_10_14',P16,SSD8,900),
-      cfg('m1pro_10_16',P16,SSD8,1500),
-      cfg('m1max_10_24',PMAX,SSD8,4200),
-      cfg('m1max_10_32',PMAX,SSD8,6100)
+      macCfg('m1pro_8_14',P16,SSD8,0,{weight:'1.60kg',battery:'69.6Wh（官方标称 70Wh）',batteryRuntime:'视频 17 小时 / 无线上网 11 小时',power:'随附 67W；96W 可选并支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台 6K 60Hz'}),
+      macCfg('m1pro_10_14',P16,SSD8,900,{weight:'1.60kg',battery:'69.6Wh（官方标称 70Wh）',batteryRuntime:'视频 17 小时 / 无线上网 11 小时',power:'随附 96W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台 6K 60Hz'}),
+      macCfg('m1pro_10_16',P16,SSD8,1500,{weight:'1.60kg',battery:'69.6Wh（官方标称 70Wh）',batteryRuntime:'视频 17 小时 / 无线上网 11 小时',power:'随附 96W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台 6K 60Hz'}),
+      macCfg('m1max_10_24',PMAX,SSD8,4200,{weight:'1.60kg',battery:'69.6Wh（官方标称 70Wh）',batteryRuntime:'视频 17 小时 / 无线上网 11 小时',power:'随附 96W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 3 台 6K 60Hz + 1 台 4K 60Hz'}),
+      macCfg('m1max_10_32',PMAX,SSD8,6100,{weight:'1.60kg',battery:'69.6Wh（官方标称 70Wh）',batteryRuntime:'视频 17 小时 / 无线上网 11 小时',power:'随附 96W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 3 台 6K 60Hz + 1 台 4K 60Hz'})
     ],[5900,7900,5010,6720],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','1.6kg','69.6Wh（官方标称 70Wh）','雷雳 4 × 3；HDMI；SDXC；MagSafe 3；3.5mm','XDR 1000 尼特持续 / 1600 尼特峰值','1080p FaceTime HD','Wi‑Fi 6；蓝牙 5.0','M1 Pro 最多 2 台 6K；M1 Max 最多 3 台 6K + 1 台 4K')),
     mac('mbp16_2021','2021-10-26','Pro 16','MacBook Pro 16 英寸（2021）','https://support.apple.com/zh-cn/111901',[
-      cfg('m1pro_10_16',P16,SSD8),
-      cfg('m1max_10_24',PMAX,SSD8,3600),
-      cfg('m1max_10_32',PMAX,SSD8,5400)
+      macCfg('m1pro_10_16',P16,SSD8,0,{weight:'2.10kg',battery:'99.6Wh（官方标称 100Wh）',batteryRuntime:'视频 21 小时 / 无线上网 14 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台 6K 60Hz'}),
+      macCfg('m1max_10_24',PMAX,S1_8,3600,{weight:'2.20kg',battery:'99.6Wh（官方标称 100Wh）',batteryRuntime:'视频 21 小时 / 无线上网 14 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 3 台 6K 60Hz + 1 台 4K 60Hz'}),
+      macCfg('m1max_10_32',PMAX,S1_8,5400,{weight:'2.20kg',battery:'99.6Wh（官方标称 100Wh）',batteryRuntime:'视频 21 小时 / 无线上网 14 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 3 台 6K 60Hz + 1 台 4K 60Hz'})
     ],[7100,9500,6030,8080],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','2.1kg（M1 Max 2.2kg）','99.6Wh（官方标称 100Wh）','雷雳 4 × 3；HDMI；SDXC；MagSafe 3；3.5mm','XDR 1000 尼特持续 / 1600 尼特峰值','1080p FaceTime HD','Wi‑Fi 6；蓝牙 5.0','M1 Pro 最多 2 台 6K；M1 Max 最多 3 台 6K + 1 台 4K')),
     mac('mba13_m2','2022-07-15','Air','MacBook Air 13 英寸（M2，2022）','https://support.apple.com/zh-cn/111867',[cfg('m2_8_8',['8GB','16GB','24GB'],S256),cfg('m2_8_10',['8GB','16GB','24GB'],S256,700)],[4100,5600,3490,4760],macSpec('13.6 英寸 Liquid Retina','2560 × 1664','60Hz','1.24kg','52.6Wh','雷雳 / USB 4 × 2；MagSafe 3；3.5mm','500 尼特','1080p FaceTime HD','Wi‑Fi 6；蓝牙 5.3','1 台最高 6K 60Hz')),
     mac('mbp13_m2','2022-06-24','Pro 13','MacBook Pro 13 英寸（M2，2022）','https://support.apple.com/zh-cn/111869',[cfg('m2_8_10',['8GB','16GB','24GB'],['256GB','512GB','1TB','2TB'])],[4700,6300,4000,5360],macSpec('13.3 英寸 Retina','2560 × 1600','60Hz','1.4kg','58.2Wh','雷雳 / USB 4 × 2；3.5mm','500 尼特','720p FaceTime HD','Wi‑Fi 6；蓝牙 5.0','1 台最高 6K 60Hz')),
-    mac('mbp14_m2','2023-01-24','Pro 14','MacBook Pro 14 英寸（M2 Pro / Max，2023）','https://support.apple.com/zh-cn/111340',[cfg('m2pro_10_16',['16GB','32GB'],['512GB','1TB','2TB','4TB','8TB']),cfg('m2pro_12_19',['16GB','32GB'],['512GB','1TB','2TB','4TB','8TB'],2200),cfg('m2max_12_30',['32GB','64GB'],['1TB','2TB','4TB','8TB'],5200),cfg('m2max_12_38',['32GB','64GB','96GB'],['1TB','2TB','4TB','8TB'],7600)],[8000,10500,6800,8930],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','1.6kg','70Wh','雷雳 4 × 3；HDMI 2.1；SDXC；MagSafe 3；3.5mm','XDR 1000 / 1600 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3')),
-    mac('mbp16_m2','2023-01-24','Pro 16','MacBook Pro 16 英寸（M2 Pro / Max，2023）','https://support.apple.com/zh-cn/111838',[cfg('m2pro_12_19',['16GB','32GB'],['512GB','1TB','2TB','4TB','8TB']),cfg('m2max_12_30',['32GB','64GB'],['1TB','2TB','4TB','8TB'],4300),cfg('m2max_12_38',['32GB','64GB','96GB'],['1TB','2TB','4TB','8TB'],6700)],[9200,12100,7820,10290],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','2.15kg（Max 2.16kg）','100Wh','雷雳 4 × 3；HDMI 2.1；SDXC；MagSafe 3；3.5mm','XDR 1000 / 1600 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3')),
+    mac('mbp14_m2','2023-01-24','Pro 14','MacBook Pro 14 英寸（M2 Pro / Max，2023）','https://support.apple.com/zh-cn/111340',[
+      macCfg('m2pro_10_16',['16GB','32GB'],SSD8,0,{weight:'1.60kg',battery:'70Wh',batteryRuntime:'视频 18 小时 / 无线上网 12 小时',power:'随附 67W；96W 可选并支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'}),
+      macCfg('m2pro_12_19',['16GB','32GB'],SSD8,2200,{weight:'1.60kg',battery:'70Wh',batteryRuntime:'视频 18 小时 / 无线上网 12 小时',power:'随附 96W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'}),
+      macCfg('m2max_12_30',['32GB','64GB'],S1_8,5200,{weight:'1.63kg',battery:'70Wh',batteryRuntime:'视频 18 小时 / 无线上网 12 小时',power:'随附 96W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'}),
+      macCfg('m2max_12_38',['32GB','64GB','96GB'],S1_8,7600,{weight:'1.63kg',battery:'70Wh',batteryRuntime:'视频 18 小时 / 无线上网 12 小时',power:'随附 96W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'})
+    ],[8000,10500,6800,8930],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','1.60kg','70Wh','雷雳 4 × 3；HDMI 2.1；SDXC；MagSafe 3；3.5mm','XDR 1000 / 1600 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3')),
+    mac('mbp16_m2','2023-01-24','Pro 16','MacBook Pro 16 英寸（M2 Pro / Max，2023）','https://support.apple.com/zh-cn/111838',[
+      macCfg('m2pro_12_19',['16GB','32GB'],SSD8,0,{weight:'2.15kg',battery:'100Wh',batteryRuntime:'视频 22 小时 / 无线上网 15 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'}),
+      macCfg('m2max_12_30',['32GB','64GB'],S1_8,4300,{weight:'2.16kg',battery:'100Wh',batteryRuntime:'视频 22 小时 / 无线上网 15 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'}),
+      macCfg('m2max_12_38',['32GB','64GB','96GB'],S1_8,6700,{weight:'2.16kg',battery:'100Wh',batteryRuntime:'视频 22 小时 / 无线上网 15 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'})
+    ],[9200,12100,7820,10290],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','2.15kg','100Wh','雷雳 4 × 3；HDMI 2.1；SDXC；MagSafe 3；3.5mm','XDR 1000 / 1600 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3')),
     mac('mba15_m2','2023-06-13','Air','MacBook Air 15 英寸（M2，2023）','https://support.apple.com/zh-cn/111346',[cfg('m2_8_10',['8GB','16GB','24GB'],S256)],[5000,6700,4250,5700],macSpec('15.3 英寸 Liquid Retina','2880 × 1864','60Hz','1.51kg','66.5Wh','雷雳 / USB 4 × 2；MagSafe 3；3.5mm','500 尼特','1080p FaceTime HD','Wi‑Fi 6；蓝牙 5.3','1 台最高 6K 60Hz')),
-    mac('mbp14_m3','2023-11-07','Pro 14','MacBook Pro 14 英寸（M3 系列，2023）','https://support.apple.com/zh-cn/117736',[cfg('m3_8_10',['8GB','16GB','24GB'],['512GB','1TB','2TB']),cfg('m3pro_11_14',['18GB','36GB'],['512GB','1TB','2TB','4TB'],2500),cfg('m3pro_12_18',['18GB','36GB'],['512GB','1TB','2TB','4TB'],4300),cfg('m3max_14_30',['36GB','96GB'],['1TB','2TB','4TB','8TB'],7200),cfg('m3max_16_40',['48GB','64GB','128GB'],['1TB','2TB','4TB','8TB'],10600)],[8500,11200,7230,9520],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','1.55kg（Pro 1.61kg / Max 1.62kg）','70 / 72.4Wh','M3：雷雳 / USB 4 × 2；Pro/Max：雷雳 4 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 600；XDR 1000 / 1600 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3')),
-    mac('mbp16_m3','2023-11-07','Pro 16','MacBook Pro 16 英寸（M3 Pro / Max，2023）','https://support.apple.com/zh-cn/117737',[cfg('m3pro_12_18',['18GB','36GB'],['512GB','1TB','2TB','4TB']),cfg('m3max_14_30',['36GB','96GB'],['1TB','2TB','4TB','8TB'],5200),cfg('m3max_16_40',['48GB','64GB','128GB'],['1TB','2TB','4TB','8TB'],8600)],[10100,13300,8590,11310],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','2.14kg（Max 2.16kg）','100Wh','雷雳 4 × 3；HDMI 2.1；SDXC；MagSafe 3；3.5mm','SDR 600；XDR 1000 / 1600 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3')),
+    mac('mbp14_m3','2023-11-07','Pro 14','MacBook Pro 14 英寸（M3 系列，2023）','https://support.apple.com/zh-cn/117736',[
+      macCfg('m3_8_10',['8GB','16GB','24GB'],['512GB','1TB','2TB'],0,{weight:'1.55kg',battery:'69.6Wh（官方标称 70Wh）',batteryRuntime:'视频 22 小时 / 无线上网 15 小时',power:'随附 70W；96W 可选并支持快充',ports:'雷雳 / USB 4 × 2（40Gb/s）；HDMI；SDXC；MagSafe 3；3.5mm',external:'开盖 1 台 6K60；合盖可再接 1 台 5K60',colors:'深空灰色 / 银色'},'https://support.apple.com/zh-cn/117735'),
+      macCfg('m3pro_11_14',['18GB','36GB'],S4,2500,{weight:'1.61kg',battery:'72.4Wh',batteryRuntime:'视频 18 小时 / 无线上网 12 小时',power:'随附 70W；96W 可选并支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240',colors:'深空黑色 / 银色'}),
+      macCfg('m3pro_12_18',['18GB','36GB'],S4,4300,{weight:'1.61kg',battery:'72.4Wh',batteryRuntime:'视频 18 小时 / 无线上网 12 小时',power:'随附 96W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240',colors:'深空黑色 / 银色'}),
+      macCfg('m3max_14_30',['36GB','96GB'],S1_8,7200,{weight:'1.62kg',battery:'72.4Wh',batteryRuntime:'视频 18 小时 / 无线上网 12 小时',power:'随附 96W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接',colors:'深空黑色 / 银色'}),
+      macCfg('m3max_16_40',['48GB','64GB','128GB'],S1_8,10600,{weight:'1.62kg',battery:'72.4Wh',batteryRuntime:'视频 18 小时 / 无线上网 12 小时',power:'随附 96W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接',colors:'深空黑色 / 银色'})
+    ],[8500,11200,7230,9520],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','1.55kg','69.6Wh（官方标称 70Wh）','雷雳 / USB 4 × 2；HDMI；SDXC；MagSafe 3；3.5mm','SDR 600；XDR 1000 / 1600 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3')),
+    mac('mbp16_m3','2023-11-07','Pro 16','MacBook Pro 16 英寸（M3 Pro / Max，2023）','https://support.apple.com/zh-cn/117737',[
+      macCfg('m3pro_12_18',['18GB','36GB'],S4,0,{weight:'2.14kg',battery:'100Wh',batteryRuntime:'视频 22 小时 / 无线上网 15 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'}),
+      macCfg('m3max_14_30',['36GB','96GB'],S1_8,5200,{weight:'2.16kg',battery:'100Wh',batteryRuntime:'视频 22 小时 / 无线上网 15 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'}),
+      macCfg('m3max_16_40',['48GB','64GB','128GB'],S1_8,8600,{weight:'2.16kg',battery:'100Wh',batteryRuntime:'视频 22 小时 / 无线上网 15 小时',power:'随附 140W；支持快充',ports:'雷雳 4 × 3（40Gb/s）；HDMI 2.1；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'})
+    ],[10100,13300,8590,11310],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','2.14kg','100Wh','雷雳 4 × 3；HDMI 2.1；SDXC；MagSafe 3；3.5mm','SDR 600；XDR 1000 / 1600 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3')),
     mac('mba13_m3','2024-03-08','Air','MacBook Air 13 英寸（M3，2024）','https://support.apple.com/zh-cn/118551',[cfg('m3_8_8',['8GB','16GB','24GB'],S256),cfg('m3_8_10',['8GB','16GB','24GB'],S256,700)],[5200,6800,4420,5780],macSpec('13.6 英寸 Liquid Retina','2560 × 1664','60Hz','1.24kg','52.6Wh','雷雳 / USB 4 × 2；MagSafe 3；3.5mm','500 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3','合盖最多 2 台外接显示器')),
     mac('mba15_m3','2024-03-08','Air','MacBook Air 15 英寸（M3，2024）','https://support.apple.com/zh-cn/118552',[cfg('m3_8_10',['8GB','16GB','24GB'],S256)],[6100,7900,5180,6720],macSpec('15.3 英寸 Liquid Retina','2880 × 1864','60Hz','1.51kg','66.5Wh','雷雳 / USB 4 × 2；MagSafe 3；3.5mm','500 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3','合盖最多 2 台外接显示器')),
-    mac('mbp14_m4','2024-11-08','Pro 14','MacBook Pro 14 英寸（M4 系列，2024）','https://support.apple.com/zh-cn/121553',[cfg('m4_10_10',['16GB','24GB','32GB'],['512GB','1TB','2TB']),cfg('m4pro_12_16',['24GB','48GB'],['512GB','1TB','2TB','4TB'],3000),cfg('m4pro_14_20',['24GB','48GB'],['512GB','1TB','2TB','4TB'],5200),cfg('m4max_14_32',['36GB'],['1TB','2TB','4TB','8TB'],8500),cfg('m4max_16_40',['48GB','64GB','128GB'],['1TB','2TB','4TB','8TB'],11900)],[10200,13200,8670,11220],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','1.55kg（Pro/Max 约 1.6kg）','72.4Wh','雷雳 4 × 3（Pro/Max 雷雳 5）；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3')),
-    mac('mbp16_m4','2024-11-08','Pro 16','MacBook Pro 16 英寸（M4 Pro / Max，2024）','https://support.apple.com/zh-cn/121554',[cfg('m4pro_14_20',['24GB','48GB'],['512GB','1TB','2TB','4TB']),cfg('m4max_14_32',['36GB'],['1TB','2TB','4TB','8TB'],5700),cfg('m4max_16_40',['48GB','64GB','128GB'],['1TB','2TB','4TB','8TB'],9000)],[11900,15300,10120,13010],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','2.14kg（Max 2.15kg）','100Wh','雷雳 5 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3')),
+    mac('mbp14_m4','2024-11-08','Pro 14','MacBook Pro 14 英寸（M4 系列，2024）','https://support.apple.com/zh-cn/121553',[
+      macCfg('m4_10_10',['16GB','24GB','32GB'],['512GB','1TB','2TB'],0,{weight:'1.55kg',battery:'72.4Wh',batteryRuntime:'流媒体 24 小时 / 无线上网 16 小时',power:'随附 70W；96W 可选并支持快充',ports:'雷雳 4 × 3（40Gb/s，DisplayPort 1.4）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'},'https://support.apple.com/zh-cn/121552'),
+      macCfg('m4pro_12_16',['24GB','48GB'],S4,3000,{weight:'1.60kg',battery:'72.4Wh',batteryRuntime:'流媒体 22 小时 / 无线上网 14 小时',power:'随附 70W；96W 可选并支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'}),
+      macCfg('m4pro_14_20',['24GB','48GB'],S4,5200,{weight:'1.60kg',battery:'72.4Wh',batteryRuntime:'流媒体 22 小时 / 无线上网 14 小时',power:'随附 96W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'}),
+      macCfg('m4max_14_32',['36GB'],S1_8,8500,{weight:'1.62kg',battery:'72.4Wh',batteryRuntime:'流媒体 18 小时 / 无线上网 13 小时',power:'随附 96W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'}),
+      macCfg('m4max_16_40',['48GB','64GB','128GB'],S1_8,11900,{weight:'1.62kg',battery:'72.4Wh',batteryRuntime:'流媒体 18 小时 / 无线上网 13 小时',power:'随附 96W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'})
+    ],[10200,13200,8670,11220],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','1.55kg','72.4Wh','雷雳 4 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3')),
+    mac('mbp16_m4','2024-11-08','Pro 16','MacBook Pro 16 英寸（M4 Pro / Max，2024）','https://support.apple.com/zh-cn/121554',[
+      macCfg('m4pro_14_20',['24GB','48GB'],S4,0,{weight:'2.14kg',battery:'100Wh',batteryRuntime:'流媒体 24 小时 / 无线上网 17 小时',power:'随附 140W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'}),
+      macCfg('m4max_14_32',['36GB'],S1_8,5700,{weight:'2.15kg',battery:'100Wh',batteryRuntime:'流媒体 21 小时 / 无线上网 14 小时',power:'随附 140W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'}),
+      macCfg('m4max_16_40',['48GB','64GB','128GB'],S1_8,9000,{weight:'2.15kg',battery:'100Wh',batteryRuntime:'流媒体 21 小时 / 无线上网 14 小时',power:'随附 140W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'})
+    ],[11900,15300,10120,13010],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','2.14kg','100Wh','雷雳 5 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3')),
     mac('mba13_m4','2025-03-12','Air','MacBook Air 13 英寸（M4，2025）','https://support.apple.com/zh-cn/122209',[cfg('m4_10_10',['16GB','24GB','32GB'],S256)],[6500,8100,5520,6890],macSpec('13.6 英寸 Liquid Retina','2560 × 1664','60Hz','1.24kg','53.8Wh','雷雳 4 × 2；MagSafe 3；3.5mm','500 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3','最多 2 台 6K 外接显示器')),
     mac('mba15_m4','2025-03-12','Air','MacBook Air 15 英寸（M4，2025）','https://support.apple.com/zh-cn/122210',[cfg('m4_10_10',['16GB','24GB','32GB'],S256)],[7600,9300,6460,7910],macSpec('15.3 英寸 Liquid Retina','2880 × 1864','60Hz','1.51kg','66.5Wh','雷雳 4 × 2；MagSafe 3；3.5mm','500 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3','最多 2 台 6K 外接显示器')),
-    mac('mbp14_m5','2025-10-22','Pro 14','MacBook Pro 14 英寸（M5，2025）','https://support.apple.com/zh-cn/125405',[cfg('m5_10_10',['16GB','24GB','32GB'],['512GB','1TB','2TB','4TB'])],[11800,14500,10030,12320],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','约 1.55kg','72.4Wh','雷雳 4 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3')),
+    mac('mbp14_m5','2025-10-22','Pro 14','MacBook Pro 14 英寸（M5，2025）','https://support.apple.com/zh-cn/125405',[
+      macCfg('m5_10_10',['16GB','24GB','32GB'],['512GB','1TB','2TB','4TB'],0,{weight:'1.55kg',battery:'72.4Wh',batteryRuntime:'流媒体 24 小时 / 无线上网 16 小时',power:'随附 70W；96W 可选并支持快充',ports:'雷雳 4 × 3（40Gb/s，DisplayPort 1.4）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 2 台外接；单台最高 8K60 / 4K240'})
+    ],[11800,14500,10030,12320],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','1.55kg','72.4Wh','雷雳 4 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 6E；蓝牙 5.3')),
     mac('macbook_neo','2026-03-11','Neo','MacBook Neo（2026）','https://support.apple.com/zh-cn/126322',[cfg('a18pro_5',['8GB'],['256GB','512GB'])],[4200,5200,3570,4420],macSpec('13 英寸 Liquid Retina','2408 × 1506','60Hz','1.23kg','36.5Wh','USB 3 USB‑C × 1；USB 2 USB‑C × 1；3.5mm','500 尼特','1080p FaceTime HD','Wi‑Fi 6E；蓝牙 5.3','1 台最高 4K 外接显示器')),
     mac('mba13_m5','2026-03-11','Air','MacBook Air 13 英寸（M5，2026）','https://support.apple.com/zh-cn/126320',[cfg('m5_10_8',['16GB','24GB','32GB'],S256),cfg('m5_10_10',['16GB','24GB','32GB'],S256,700)],[8000,9700,6800,8250],macSpec('13.6 英寸 Liquid Retina','2560 × 1664','60Hz','约 1.24kg','约 54Wh','雷雳 4 × 2；MagSafe 3；3.5mm','500 尼特','1200 万像素人物居中','Wi‑Fi 7；蓝牙 6','最多 2 台外接显示器')),
     mac('mba15_m5','2026-03-11','Air','MacBook Air 15 英寸（M5，2026）','https://support.apple.com/zh-cn/126321',[cfg('m5_10_10',['16GB','24GB','32GB'],S256)],[9100,10900,7740,9270],macSpec('15.3 英寸 Liquid Retina','2880 × 1864','60Hz','约 1.51kg','约 66Wh','雷雳 4 × 2；MagSafe 3；3.5mm','500 尼特','1200 万像素人物居中','Wi‑Fi 7；蓝牙 6','最多 2 台外接显示器')),
-    mac('mbp14_m5pro','2026-03-11','Pro 14','MacBook Pro 14 英寸（M5 Pro / Max，2026）','https://support.apple.com/zh-cn/126318',[cfg('m5pro_15_16',['24GB','48GB'],['1TB','2TB','4TB']),cfg('m5pro_18_20',['24GB','48GB','64GB'],['1TB','2TB','4TB'],2600),cfg('m5max_18_32',['36GB'],['2TB','4TB','8TB'],6200),cfg('m5max_18_40',['48GB','64GB','128GB'],['2TB','4TB','8TB'],9400)],[14500,17800,12320,15130],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','约 1.6kg','约 72Wh','雷雳 5 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 7；蓝牙 6')),
-    mac('mbp16_m5pro','2026-03-11','Pro 16','MacBook Pro 16 英寸（M5 Pro / Max，2026）','https://support.apple.com/zh-cn/126319',[cfg('m5pro_18_20',['24GB','48GB','64GB'],['1TB','2TB','4TB']),cfg('m5max_18_32',['36GB'],['2TB','4TB','8TB'],5200),cfg('m5max_18_40',['48GB','64GB','128GB'],['2TB','4TB','8TB'],8400)],[16300,19900,13860,16920],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','约 2.15kg','100Wh','雷雳 5 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 7；蓝牙 6'))
+    mac('mbp14_m5pro','2026-03-11','Pro 14','MacBook Pro 14 英寸（M5 Pro / Max，2026）','https://support.apple.com/zh-cn/126318',[
+      macCfg('m5pro_15_16',['24GB','48GB'],['1TB','2TB','4TB'],0,{weight:'1.60kg',battery:'72.4Wh',batteryRuntime:'流媒体 22 小时 / 无线上网 14 小时',power:'随附 70W；96W 可选并支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 3 台外接'}),
+      macCfg('m5pro_18_20',['24GB','48GB','64GB'],['1TB','2TB','4TB'],2600,{weight:'1.60kg',battery:'72.4Wh',batteryRuntime:'流媒体 22 小时 / 无线上网 14 小时',power:'随附 96W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 3 台外接'}),
+      macCfg('m5max_18_32',['36GB'],['2TB','4TB','8TB'],6200,{weight:'1.62kg',battery:'72.4Wh',batteryRuntime:'流媒体 20 小时 / 无线上网 13 小时',power:'随附 96W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'}),
+      macCfg('m5max_18_40',['48GB','64GB','128GB'],['2TB','4TB','8TB'],9400,{weight:'1.62kg',battery:'72.4Wh',batteryRuntime:'流媒体 20 小时 / 无线上网 13 小时',power:'随附 96W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'})
+    ],[14500,17800,12320,15130],macSpec('14.2 英寸 Liquid Retina XDR','3024 × 1964','ProMotion 最高 120Hz','1.60kg','72.4Wh','雷雳 5 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 7；蓝牙 6')),
+    mac('mbp16_m5pro','2026-03-11','Pro 16','MacBook Pro 16 英寸（M5 Pro / Max，2026）','https://support.apple.com/zh-cn/126319',[
+      macCfg('m5pro_18_20',['24GB','48GB','64GB'],['1TB','2TB','4TB'],0,{weight:'2.14kg',battery:'100Wh',batteryRuntime:'流媒体 24 小时 / 无线上网 17 小时',power:'随附 140W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 3 台外接'}),
+      macCfg('m5max_18_32',['36GB'],['2TB','4TB','8TB'],5200,{weight:'2.15kg',battery:'100Wh',batteryRuntime:'流媒体 22 小时 / 无线上网 16 小时',power:'随附 140W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'}),
+      macCfg('m5max_18_40',['48GB','64GB','128GB'],['2TB','4TB','8TB'],8400,{weight:'2.15kg',battery:'100Wh',batteryRuntime:'流媒体 22 小时 / 无线上网 16 小时',power:'随附 140W；支持快充',ports:'雷雳 5 × 3（120Gb/s，DisplayPort 2.1）；HDMI；SDXC；MagSafe 3；3.5mm',external:'最多 4 台外接'})
+    ],[16300,19900,13860,16920],macSpec('16.2 英寸 Liquid Retina XDR','3456 × 2234','ProMotion 最高 120Hz','2.14kg','100Wh','雷雳 5 × 3；HDMI；SDXC；MagSafe 3；3.5mm','SDR 1000；XDR 1000 / 1600 尼特','1200 万像素人物居中','Wi‑Fi 7；蓝牙 6'))
   );
 
   /* Apple 不公开 iPhone Wh：统一改用官方视频 / 流媒体续航，避免混入拆机容量。 */
@@ -361,6 +454,20 @@ window.APPLE_DATA=(()=>{
   const ipadLinks={ipadpro97:'111965',ipad5:'111960',ipadpro105:'111927',ipadpro129_2:'111964',ipad6:'111957',ipadpro11_1:'111974',ipadpro129_3:'111979',ipadair3:'111939',ipadmini5:'111904',ipad7:'111911',ipadmini6:'111886',ipadmini_a17:'121456'};
   Object.entries(ipadWh).forEach(([id,wh])=>{const p=products.find(x=>x.id===id);if(p){p.specs.battery=`${wh}Wh；${IPAD_10H}`;if(p.year<=2022&&p.type==='Pro'&&p.specs.refresh.includes('120Hz'))p.specs.refresh='ProMotion'}});
   Object.entries(ipadLinks).forEach(([id,n])=>{const p=products.find(x=>x.id===id);if(p)p.official=`https://support.apple.com/zh-cn/${n}`});
+
+  /* Intel MacBook Pro 的重量、端口、电源和外显上限按整机固定；Apple 没有
+     发布逐 BTO 重量，不能因为 CPU/GPU 不同而自行推测。 */
+  const intelProFixed={
+    mbp13_2016_2:{power:'随附 61W',external:'1 台 5K60 或 2 台 4K60'},mbp13_2016_4:{power:'随附 61W',external:'1 台 5K60 或 2 台 4K60'},
+    mbp13_2017_2:{power:'随附 61W',external:'1 台 5K60 或 2 台 4K60'},mbp13_2017_4:{power:'随附 61W',external:'1 台 5K60 或 2 台 4K60'},
+    mbp13_2018:{power:'随附 61W',external:'1 台 5K60 或 2 台 4K60'},mbp13_2019_2:{power:'随附 61W',external:'1 台 5K60 或 2 台 4K60'},
+    mbp13_2019_4:{power:'随附 61W',external:'1 台 5K60 或 2 台 4K60'},mbp13_intel_2020_2:{power:'随附 61W',external:'1 台 5K60 或 2 台 4K60'},
+    mbp13_intel_2020:{power:'随附 61W',external:'1 台 6K60 / 5K60 或 2 台 4K60'},
+    mbp15_2016:{power:'随附 87W',external:'2 台 5K60 或 4 台 4K60'},mbp15_2017:{power:'随附 87W',external:'2 台 5K60 或 4 台 4K60'},
+    mbp15_2018:{power:'随附 87W',external:'2 台 5K60 或 4 台 4K60'},mbp15_2019:{power:'随附 87W',external:'2 台 5K60 或 4 台 4K60'},
+    mbp16_2019:{power:'随附 96W',external:'2 台 6016×3384 60Hz 或 4 台 4096×2304 60Hz'}
+  };
+  Object.entries(intelProFixed).forEach(([id,specs])=>Object.assign(products.find(p=>p.id===id).specs,specs));
 
   const baselines={iphone:'a14',ipad:'m1_ipad',mac:'m1_8_8'};
   const baselineLabels={iphone:'A14 Bionic',ipad:'M1（iPad）',mac:'M1（8 核 CPU / 8 核 GPU）'};

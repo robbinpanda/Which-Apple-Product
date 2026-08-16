@@ -154,18 +154,12 @@
     if(!bench)throw new Error(`缺少芯片数据：${option.bench}`);
     const basePair=defaultPair(chipGroups(p)[0]),baseOption=basePair.option;
     const market=marketEstimate(p,group,option,s,basePair,baseOption);
-    const specs={...p.specs};
-    if(p.id==='mbp16_2021')specs.weight=option.bench.includes('m1max')?'2.2kg':'2.1kg';
-    if(p.id==='mbp14_2021'){
-      specs.power=option.bench==='m1pro_8_14'?'67W USB‑C 电源适配器':'96W USB‑C 电源适配器';
-      specs.memoryBandwidth=option.bench.includes('m1max')?'400GB/s':'200GB/s';
-      specs.external=option.bench.includes('m1max')?'最多 3 台 6K + 1 台 4K':'最多 2 台 6K';
-    }
-    if(p.id==='mbp16_2021'){
-      specs.memoryBandwidth=option.bench.includes('m1max')?'400GB/s':'200GB/s';
-      specs.external=option.bench.includes('m1max')?'最多 3 台 6K + 1 台 4K':'最多 2 台 6K';
-    }
-    return {p,s,option,bench,indices:indices(p.category,bench),market,specs};
+    const specs={...p.specs,...(bench.specs||{}),...(option.specs||{})};
+    const pairs=legalPairs(group),memories=[...new Set(pairs.map(x=>x.memory).filter(Boolean))],storages=[...new Set(pairs.map(x=>x.storage).filter(Boolean))];
+    if(memories.length)specs.memoryOptions=memories.join(' / ');
+    if(storages.length)specs.storageOptions=storages.join(' / ');
+    const official=option.official||p.official;
+    return {p,s,option,bench,indices:indices(p.category,bench),market,specs,official};
   }
   function auditAllMarketConfigs(){
     return D.products.flatMap(p=>{
@@ -207,7 +201,7 @@
   function filtered(){
     const q=state.search.trim().toLowerCase();
     const list=D.products.filter(p=>{
-      const hay=[p.name,p.type,p.specs.ports,...p.chipOptions.map(c=>D.benchmarks[c.bench]?.name||'')].join(' ').toLowerCase();
+      const hay=[p.name,p.type,...Object.values(p.specs),...p.chipOptions.flatMap(c=>[D.benchmarks[c.bench]?.name||'',...Object.values(c.specs||{})])].join(' ').toLowerCase();
       return p.category===state.category&&(state.year==='all'||p.year===+state.year)&&(state.type==='all'||p.type===state.type)&&(!q||hay.includes(q));
     }).map(viewOf);
     const sorters={
@@ -249,12 +243,12 @@
     const head=`<div class="table-shell"><table><thead><tr><th class="sticky-product">机型</th><th>芯片</th><th>配置</th><th>CPU 单核<small>${baseline} = 100%</small></th><th>CPU 多核<small>${baseline} = 100%</small></th><th>GPU<small>${baseline} = 100%</small></th><th>二手购入估值<small>普通成色 · 2026-08</small></th></tr></thead><tbody>`;
     const body=list.map(v=>{
       const c=configHtml(v);
-      return `<tr><td class="sticky-product product-cell"><div class="product">${esc(v.p.name)}</div><span class="subtype">${v.p.year} · ${esc(v.p.type)}</span><div class="micro-actions"><button class="text-btn" data-spec="${v.p.id}">规格</button><button class="text-btn" data-compare="${v.p.id}">对比</button><a class="source-link" href="${esc(v.p.official)}" target="_blank" rel="noreferrer">Apple</a></div></td><td>${c.chip}</td><td>${c.target}</td><td>${metricCell(v.indices.single,'single',maxima.single)}</td><td>${metricCell(v.indices.multi,'multi',maxima.multi)}</td><td>${metricCell(v.indices.gpu,'gpu',maxima.gpu)}</td><td class="market-price"><div><span>闲鱼个人</span><a href="${searchLink('xy',v)}" target="_blank" rel="noreferrer" title="个人挂牌 / 近期成交估值；点击搜索当前配置">¥${fmt(v.market.xy[0])}–${fmt(v.market.xy[1])}</a></div><div><span>转转验机</span><a href="${searchLink('zz',v)}" target="_blank" rel="noreferrer" title="带验机和售后服务的买家零售估值；不是回收价">≈ ¥${fmt(v.market.zz[0])}–${fmt(v.market.zz[1])}</a></div></td></tr>`;
+      return `<tr><td class="sticky-product product-cell"><div class="product">${esc(v.p.name)}</div><span class="subtype">${v.p.year} · ${esc(v.p.type)}</span><div class="micro-actions"><button class="text-btn" data-spec="${v.p.id}">规格</button><button class="text-btn" data-compare="${v.p.id}">对比</button><a class="source-link" href="${esc(v.official)}" target="_blank" rel="noreferrer">Apple</a></div></td><td>${c.chip}</td><td>${c.target}</td><td>${metricCell(v.indices.single,'single',maxima.single)}</td><td>${metricCell(v.indices.multi,'multi',maxima.multi)}</td><td>${metricCell(v.indices.gpu,'gpu',maxima.gpu)}</td><td class="market-price"><div><span>闲鱼个人</span><a href="${searchLink('xy',v)}" target="_blank" rel="noreferrer" title="个人挂牌 / 近期成交估值；点击搜索当前配置">¥${fmt(v.market.xy[0])}–${fmt(v.market.xy[1])}</a></div><div><span>转转验机</span><a href="${searchLink('zz',v)}" target="_blank" rel="noreferrer" title="带验机和售后服务的买家零售估值；不是回收价">≈ ¥${fmt(v.market.zz[0])}–${fmt(v.market.zz[1])}</a></div></td></tr>`;
     }).join('');
     return head+body+'</tbody></table></div>';
   }
   function cardsHtml(list){
-    return `<div class="cards">${list.map(v=>`<article class="card"><div class="card-top"><div><span class="subtype">${v.p.year} · ${esc(v.p.type)}</span><h3>${esc(v.p.name)}</h3></div><a class="source-link" href="${esc(v.p.official)}" target="_blank" rel="noreferrer">Apple</a></div><div class="card-config">${configHtml(v,'card')}</div><div class="card-metrics"><div class="metric-box"><small>单核</small><b>${Math.round(v.indices.single)}%</b></div><div class="metric-box"><small>多核</small><b>${Math.round(v.indices.multi)}%</b></div><div class="metric-box"><small>GPU</small><b>${Math.round(v.indices.gpu)}%</b></div></div><div class="card-prices"><div><small>闲鱼个人</small><a href="${searchLink('xy',v)}" target="_blank" rel="noreferrer">¥${fmt(v.market.xy[0])}–${fmt(v.market.xy[1])}</a></div><div><small>转转验机估值</small><a href="${searchLink('zz',v)}" target="_blank" rel="noreferrer">≈ ¥${fmt(v.market.zz[0])}–${fmt(v.market.zz[1])}</a></div></div><div class="card-actions"><button class="compare" data-compare="${v.p.id}">加入对比</button><button class="text-btn" data-spec="${v.p.id}">查看规格</button></div></article>`).join('')}</div>`;
+    return `<div class="cards">${list.map(v=>`<article class="card"><div class="card-top"><div><span class="subtype">${v.p.year} · ${esc(v.p.type)}</span><h3>${esc(v.p.name)}</h3></div><a class="source-link" href="${esc(v.official)}" target="_blank" rel="noreferrer">Apple</a></div><div class="card-config">${configHtml(v,'card')}</div><div class="card-metrics"><div class="metric-box"><small>单核</small><b>${Math.round(v.indices.single)}%</b></div><div class="metric-box"><small>多核</small><b>${Math.round(v.indices.multi)}%</b></div><div class="metric-box"><small>GPU</small><b>${Math.round(v.indices.gpu)}%</b></div></div><div class="card-prices"><div><small>闲鱼个人</small><a href="${searchLink('xy',v)}" target="_blank" rel="noreferrer">¥${fmt(v.market.xy[0])}–${fmt(v.market.xy[1])}</a></div><div><small>转转验机估值</small><a href="${searchLink('zz',v)}" target="_blank" rel="noreferrer">≈ ¥${fmt(v.market.zz[0])}–${fmt(v.market.zz[1])}</a></div></div><div class="card-actions"><button class="compare" data-compare="${v.p.id}">加入对比</button><button class="text-btn" data-spec="${v.p.id}">查看规格</button></div></article>`).join('')}</div>`;
   }
   function render(){
     const list=filtered();
@@ -284,14 +278,25 @@
   }
   const openModal=id=>{$('#'+id)?.classList.add('open');document.body.style.overflow='hidden'};
   const closeModal=id=>{$('#'+id)?.classList.remove('open');if(!$('.modal.open'))document.body.style.overflow=''};
+  const specLabels={
+    memoryOptions:'该芯片可选内存',storageOptions:'该芯片可选存储',gpuMemory:'独显显存',memoryBandwidth:'内存带宽',mediaEngine:'媒体引擎',neuralAccelerator:'神经网络加速器',
+    display:'屏幕',resolution:'分辨率',refresh:'刷新率',brightness:'亮度',colors:'机身颜色',weight:'重量',battery:'电池',batteryRuntime:'官方续航',power:'随附电源',
+    ports:'接口',external:'外接显示器',camera:'摄像头',wireless:'无线连接'
+  };
+  const specOrder=['memoryOptions','storageOptions','gpuMemory','memoryBandwidth','mediaEngine','neuralAccelerator','display','resolution','refresh','brightness','colors','weight','battery','batteryRuntime','power','ports','external','camera','wireless'];
+  const cpuCoreText=bench=>{
+    const detail=bench.cpu.coreBreakdown||(bench.cpu.p!=null?`${bench.cpu.p} 个性能核心 + ${bench.cpu.e} 个能效核心`:null);
+    return `${bench.cpu.cores} 核${detail?`（${detail}）`:''}`;
+  };
   function showSpecs(id){
     const v=viewOf(D.products.find(p=>p.id===id));
-    const fields={芯片:v.bench.name,CPU核心:`${v.bench.cpu.cores} 核${v.bench.cpu.p!=null?`（${v.bench.cpu.p} 性能 + ${v.bench.cpu.e} 能效）`:''}`,GPU核心:`${v.bench.gpu.cores} 核`,当前内存:v.s.memory||'固定',当前存储:v.s.storage||'固定',CPU单核:`${Math.round(v.indices.single)}%（${D.baselineLabels[v.p.category]} = 100%）`,CPU多核:`${Math.round(v.indices.multi)}%（${D.baselineLabels[v.p.category]} = 100%）`,GPU综合:`${Math.round(v.indices.gpu)}%（${D.baselineLabels[v.p.category]} = 100%）`,...v.specs};
+    const fields=[['芯片',v.bench.name],['CPU 核心',cpuCoreText(v.bench)],['GPU 核心',v.bench.gpu.cores?`${v.bench.gpu.cores} 核 / 执行单元`:'Apple 未标注'],['当前内存',v.s.memory||'固定'],['当前存储',v.s.storage||'固定'],['CPU 单核',`${Math.round(v.indices.single)}%（${D.baselineLabels[v.p.category]} = 100%）`],['CPU 多核',`${Math.round(v.indices.multi)}%（${D.baselineLabels[v.p.category]} = 100%）`],['GPU 综合',`${Math.round(v.indices.gpu)}%（${D.baselineLabels[v.p.category]} = 100%）`]];
+    specOrder.forEach(key=>{if(v.specs[key]!=null&&v.specs[key]!=='')fields.push([specLabels[key],v.specs[key]])});
     $('#specTitle').textContent=v.p.name;
-    $('#specBody').innerHTML=`<div class="spec-grid">${Object.entries(fields).map(([k,val])=>`<div class="spec-item"><span>${esc(k)}</span><b>${esc(val||'Apple 未标注')}</b></div>`).join('')}</div><a class="spec-source" href="${esc(v.p.official)}" target="_blank" rel="noreferrer">打开 Apple 官方技术规格 ↗</a>`;
+    $('#specBody').innerHTML=`<div class="spec-grid">${fields.map(([k,val])=>`<div class="spec-item"><span>${esc(k)}</span><b>${esc(val||'Apple 未标注')}</b></div>`).join('')}</div><a class="spec-source" href="${esc(v.official)}" target="_blank" rel="noreferrer">打开当前芯片对应的 Apple 官方技术规格 ↗</a>`;
     openModal('specModal');
   }
-  function snapshot(v){return {key:[v.p.id,v.option.bench,v.s.memory,v.s.storage].join('|'),name:v.p.name,year:v.p.year,chip:v.bench.name,memory:v.s.memory||'固定',storage:v.s.storage||'固定',indices:{...v.indices},market:{xy:[...v.market.xy],zz:[...v.market.zz]},specs:{...v.specs}}}
+  function snapshot(v){return {key:[v.p.id,v.option.bench,v.s.memory,v.s.storage].join('|'),name:v.p.name,year:v.p.year,chip:v.bench.name,memory:v.s.memory||'固定',storage:v.s.storage||'固定',indices:{...v.indices},market:{xy:[...v.market.xy],zz:[...v.market.zz]},specs:{...v.specs},official:v.official}}
   function addCompare(id){
     const snap=snapshot(viewOf(D.products.find(p=>p.id===id)));
     if(state.compare.some(x=>x.key===snap.key))return;
@@ -305,7 +310,7 @@
   }
   function showCompare(){
     if(!state.compare.length)return;
-    const rows=[['芯片',x=>x.chip],['目标规格组合',x=>[x.memory,x.storage].filter(Boolean).join(' + ')],['CPU 单核',x=>`${Math.round(x.indices.single)}%`],['CPU 多核',x=>`${Math.round(x.indices.multi)}%`],['GPU 综合',x=>`${Math.round(x.indices.gpu)}%`],['闲鱼个人估值',x=>`¥${fmt(x.market.xy[0])}–${fmt(x.market.xy[1])}`],['转转验机估值',x=>`约 ¥${fmt(x.market.zz[0])}–${fmt(x.market.zz[1])}`],['屏幕',x=>`${x.specs.display} · ${x.specs.resolution}`],['刷新率',x=>x.specs.refresh],['重量',x=>x.specs.weight],['电池',x=>x.specs.battery],['接口',x=>x.specs.ports]];
+    const rows=[['芯片',x=>x.chip],['目标规格组合',x=>[x.memory,x.storage].filter(Boolean).join(' + ')],['CPU 单核',x=>`${Math.round(x.indices.single)}%`],['CPU 多核',x=>`${Math.round(x.indices.multi)}%`],['GPU 综合',x=>`${Math.round(x.indices.gpu)}%`],['闲鱼个人估值',x=>`¥${fmt(x.market.xy[0])}–${fmt(x.market.xy[1])}`],['转转验机估值',x=>`约 ¥${fmt(x.market.zz[0])}–${fmt(x.market.zz[1])}`],['独显显存',x=>x.specs.gpuMemory],['内存带宽',x=>x.specs.memoryBandwidth],['媒体引擎',x=>x.specs.mediaEngine],['屏幕',x=>`${x.specs.display} · ${x.specs.resolution}`],['刷新率',x=>x.specs.refresh],['重量',x=>x.specs.weight],['电池',x=>x.specs.battery],['官方续航',x=>x.specs.batteryRuntime],['随附电源',x=>x.specs.power],['接口',x=>x.specs.ports],['外接显示器',x=>x.specs.external]];
     $('#compareGrid').style.gridTemplateColumns=`130px repeat(${state.compare.length},minmax(190px,1fr))`;
     $('#compareGrid').innerHTML=`<div class="cmp-cell label">配置</div>${state.compare.map(x=>`<div class="cmp-cell cmp-product"><b>${esc(x.name)}</b><small>${x.year} · 当前选择快照</small></div>`).join('')}${rows.map(([label,get])=>`<div class="cmp-cell label">${label}</div>${state.compare.map(x=>`<div class="cmp-cell">${esc(get(x)||'Apple 未标注')}</div>`).join('')}`).join('')}`;
     openModal('compareModal');

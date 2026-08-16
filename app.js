@@ -226,11 +226,11 @@
     const targetModified=chipModified||s.memory!==initial.memory||s.storage!==initial.storage;
     const chipModifiedClass=chipModified?' is-modified':'',targetModifiedClass=targetModified?' is-modified':'';
     const chipLabel=esc(D.benchmarks[group.bench].name);
-    const chip=groups.length===1?`<div class="fixed-value${chipModifiedClass}" title="固定芯片">${chipLabel}</div>`:`<select class="select-control product-select chip-select${chipModifiedClass}" data-chip="${p.id}" aria-label="${esc(p.name)} 芯片${chipModified?'（已调整）':''}">${groups.map((g,i)=>`<option value="${i}" ${i===s.chipIndex?'selected':''}>${esc(D.benchmarks[g.bench].name)}</option>`).join('')}</select>`;
+    const chip=groups.length===1?`<span class="static-value${chipModifiedClass}">${chipLabel}</span>`:`<select class="select-control product-select chip-select${chipModifiedClass}" data-chip="${p.id}" aria-label="${esc(p.name)} 芯片${chipModified?'（已调整）':''}">${groups.map((g,i)=>`<option value="${i}" ${i===s.chipIndex?'selected':''}>${esc(D.benchmarks[g.bench].name)}</option>`).join('')}</select>`;
     const targetLabel=pair=>[pair.memory,pair.storage].filter(Boolean).join(' + ')||'固定配置';
-    const target=pairs.length===1?`<div class="fixed-value${targetModifiedClass}" title="固定规格">${esc(targetLabel(pairs[0]))}</div>`:`<select class="select-control product-select target-select full${targetModifiedClass}" data-config="${p.id}" aria-label="目标规格组合${targetModified?'（已调整）':''}">${pairs.map(pair=>`<option value="${esc(pair.key)}" ${pair.memory===s.memory&&pair.storage===s.storage?'selected':''}>${esc(targetLabel(pair))}</option>`).join('')}</select>`;
+    const target=pairs.length===1?`<span class="static-value${targetModifiedClass}">${esc(targetLabel(pairs[0]))}</span>`:`<select class="select-control product-select target-select full${targetModifiedClass}" data-config="${p.id}" aria-label="目标规格组合${targetModified?'（已调整）':''}">${pairs.map(pair=>`<option value="${esc(pair.key)}" ${pair.memory===s.memory&&pair.storage===s.storage?'selected':''}>${esc(targetLabel(pair))}</option>`).join('')}</select>`;
     const note=option.note?`<span class="selection-note">${esc(option.note)}</span>`:'';
-    if(mode==='card')return `<label><span>芯片</span>${chip}</label><label><span>目标规格</span>${target}</label>${note}`;
+    if(mode==='card')return `<div class="config-field"><span>芯片</span>${chip}</div><div class="config-field"><span>目标规格</span>${target}</div>${note}`;
     return {chip:`<div class="select-stack">${chip}<span class="core-line">${bench.cpu.cores||'—'} 核 CPU · ${bench.gpu.cores||'—'} 核 GPU</span></div>`,target:`<div class="config-stack">${target}${note}</div>`};
   }
   const searchLink=(site,v)=>{

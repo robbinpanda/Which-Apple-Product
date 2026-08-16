@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>苹果产品对比 · 配置、性能与二手价</title>
+  <meta name="description" content="2016 年以来 iPhone、iPad 与 MacBook 的官方配置、CPU 单核/多核与 GPU 综合性能、关键规格和二手参考价对比。">
+  <link rel="stylesheet" href="styles.css?v=20260817c">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <h1>苹果产品对比</h1>
+        <p class="hero-copy">选机型和配置，直接比较性能、规格与二手价。</p>
+      </div>
+      <div class="hero-actions"><a class="header-link" href="technical-report.html">方法说明</a><button class="header-link" id="openPencil" hidden>Pencil 适配</button></div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="toolbar" aria-label="产品筛选">
+      <div class="toolbar-top"><div class="tabs" id="categoryTabs"></div><label class="search"><span>⌕</span><input id="search" type="search" placeholder="搜索机型或芯片" aria-label="搜索产品"></label></div>
+      <div class="toolbar-bottom">
+        <label class="filter-control"><span>年份</span><select class="select-control filter-select" id="year" aria-label="年份"><option value="all">全部年份</option></select></label>
+        <label class="filter-control"><span>系列</span><select class="select-control filter-select" id="typeFilter" aria-label="系列"><option value="all">全部系列</option></select></label>
+        <label class="filter-control sort-control"><span>排序</span><select class="select-control filter-select" id="sort" aria-label="排序"><option value="yearDesc">最新发布</option><option value="yearAsc">最早发布</option><option value="singleDesc">单核从高到低</option><option value="multiDesc">多核从高到低</option><option value="gpuDesc">GPU 从高到低</option><option value="priceAsc">闲鱼低价优先</option></select></label>
+        <button class="reset-configs" id="resetConfigs" type="button" hidden disabled title="恢复当前分类全部机型的默认芯片与目标规格，不改变筛选、排序或已保存的对比"><span>复位配置</span><b class="reset-count" id="resetCount" hidden></b></button>
+      </div>
+      <p class="sr-only" id="configStatus" role="status" aria-live="polite"></p>
+    </section>
+
+    <div class="result-meta"><div><h2 id="sectionTitle">iPhone</h2><p id="resultCount"></p></div><div class="performance-note" id="baselineBadges"></div></div>
+    <section id="results" aria-live="polite"></section>
+  </main>
+
+  <aside class="compare-dock" id="compareDock"><div class="dock-row"><div class="dock-items" id="dockItems"></div><button class="clear" id="clearCompare">清空</button><button class="open-compare" id="openCompare">并排对比 <span id="compareCount"></span></button></div></aside>
+
+  <div class="modal" id="compareModal" role="dialog" aria-modal="true" aria-labelledby="compareTitle"><div class="modal-card wide"><div class="modal-head"><div><div class="modal-kicker">Configuration-aware comparison</div><h2 id="compareTitle">按当前配置并排对比</h2></div><button class="close" data-close="compareModal" aria-label="关闭">×</button></div><div class="compare-grid" id="compareGrid"></div></div></div>
+
+  <div class="modal" id="specModal" role="dialog" aria-modal="true" aria-labelledby="specTitle"><div class="modal-card"><div class="modal-head"><div><div class="modal-kicker">Apple technical specifications</div><h2 id="specTitle">完整关键规格</h2></div><button class="close" data-close="specModal" aria-label="关闭">×</button></div><div id="specBody"></div></div></div>
+
+  <div class="modal" id="pencilModal" role="dialog" aria-modal="true" aria-labelledby="pencilTitle"><div class="modal-card wide"><div class="modal-head"><div><div class="modal-kicker">Apple Pencil finder</div><h2 id="pencilTitle">Pencil 先看兼容性，再看功能</h2></div><button class="close" data-close="pencilModal" aria-label="关闭">×</button></div>
+    <div class="pencil-grid">
+      <article class="pencil-card recommended"><span>功能最全</span><h3>Apple Pencil Pro</h3><p>压力、倾斜、轻捏、侧旋、触觉反馈与“查找”。适配 M4/M5 iPad Pro、M2/M3/M4 iPad Air 与 A17 Pro iPad mini。</p></article>
+      <article class="pencil-card"><span>笔记性价比</span><h3>Apple Pencil (USB‑C)</h3><p>倾斜感应与磁吸收纳；无压力感应。适配 USB‑C iPad 的范围最广。</p></article>
+      <article class="pencil-card"><span>旧款创作</span><h3>Apple Pencil（第 2 代）</h3><p>压力、倾斜、双击与磁吸充电。适配 2018–2022 的全面屏 iPad Pro、Air 4/5 与 mini 6。</p></article>
+      <article class="pencil-card"><span>Lightning 时代</span><h3>Apple Pencil（第 1 代）</h3><p>压力与倾斜感应。适配早期 iPad Pro、iPad 6–10、Air 3 与 mini 5；部分 USB‑C iPad 需转换器。</p></article>
+    </div><a class="official-big" href="https://support.apple.com/zh-cn/108937" target="_blank" rel="noreferrer">查看 Apple 官方兼容性清单 ↗</a>
+  </div></div>
+
+  <footer><div class="wrap">个人选购对比工具，不隶属于 Apple、闲鱼、转转或 NanoReview。性能与二手价格均为快照估值；方法、来源和限制见技术报告。</div></footer>
+  <script src="data.js?v=20260817c"></script>
+  <script src="app.js?v=20260817c"></script>
+</body>
+</html>

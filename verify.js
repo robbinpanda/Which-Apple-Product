@@ -36,6 +36,8 @@ for(const product of D.products){
   assert.ok(!ids.has(product.id),`产品 id 重复: ${product.id}`);ids.add(product.id);
   const pairKeys=new Set();
   for(const option of product.chipOptions){
+    const resolvedSpecs={...product.specs,...(D.benchmarks[option.bench].specs||{}),...(option.specs||{})};
+    for(const field of ['display','resolution','refresh','weight','battery','ports'])assert.ok(resolvedSpecs[field],`${product.id}/${option.bench} 默认可见规格缺少 ${field}`);
     assert.ok(Number.isFinite(option.bundleDelta)&&option.bundleDelta>=0,`${product.id}/${option.bench} bundleDelta 非法`);
     assert.equal('priceDelta' in option,false,`${product.id}/${option.bench} 不应再使用旧 priceDelta`);
     assert.ok(!option.memory.some(value=>value.includes('||')),`${product.id} 内存值含保留分隔符`);

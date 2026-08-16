@@ -237,18 +237,32 @@
     const q=[v.p.name,v.bench.name.split('·')[0].trim(),v.s.memory,v.s.storage].filter(Boolean).join(' ');
     return site==='xy'?`https://www.goofish.com/search?q=${encodeURIComponent(q)}`:`https://www.zhuanzhuan.com/search?keyword=${encodeURIComponent(q)}`;
   };
+  const specLine=(...values)=>[...new Set(values.filter(value=>value!=null&&value!==''))].join(' · ')||'Apple 未标注';
+  function keySpecsHtml(v){
+    const specs=v.specs;
+    const batteryItems=specs.batteryRuntime
+      ?[['battery','电池',specLine(specs.battery)],['runtime','续航',specLine(specs.batteryRuntime)]]
+      :[['battery',String(specs.battery||'').includes('小时')?'电池 / 续航':'电池',specLine(specs.battery)]];
+    const items=[
+      ['screen','屏幕',specLine(specs.display,specs.resolution,specs.refresh)],
+      ['weight','重量',specLine(specs.weight)],
+      ...batteryItems,
+      ['ports','接口',specLine(specs.ports)]
+    ];
+    return `<dl class="key-specs">${items.map(([key,label,value])=>`<div class="key-spec-${key}"><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>`;
+  }
   function tableHtml(list){
     const baseline=esc(D.baselineLabels[state.category]);
     const maxima=columnMaxima(list);
-    const head=`<div class="table-shell"><table><thead><tr><th class="sticky-product">机型</th><th>芯片</th><th>配置</th><th>CPU 单核<small>${baseline} = 100%</small></th><th>CPU 多核<small>${baseline} = 100%</small></th><th>GPU<small>${baseline} = 100%</small></th><th>二手购入估值<small>普通成色 · 2026-08</small></th></tr></thead><tbody>`;
+    const head=`<div class="table-shell"><table><thead><tr><th class="sticky-product">机型</th><th>芯片</th><th>配置</th><th>关键规格<small>随当前芯片联动</small></th><th>CPU 单核<small>${baseline} = 100%</small></th><th>CPU 多核<small>${baseline} = 100%</small></th><th>GPU<small>${baseline} = 100%</small></th><th>二手购入估值<small>普通成色 · 2026-08</small></th></tr></thead><tbody>`;
     const body=list.map(v=>{
       const c=configHtml(v);
-      return `<tr><td class="sticky-product product-cell"><div class="product">${esc(v.p.name)}</div><span class="subtype">${v.p.year} · ${esc(v.p.type)}</span><div class="micro-actions"><button class="text-btn" data-spec="${v.p.id}">规格</button><button class="text-btn" data-compare="${v.p.id}">对比</button><a class="source-link" href="${esc(v.official)}" target="_blank" rel="noreferrer">Apple</a></div></td><td>${c.chip}</td><td>${c.target}</td><td>${metricCell(v.indices.single,'single',maxima.single)}</td><td>${metricCell(v.indices.multi,'multi',maxima.multi)}</td><td>${metricCell(v.indices.gpu,'gpu',maxima.gpu)}</td><td class="market-price"><div><span>闲鱼个人</span><a href="${searchLink('xy',v)}" target="_blank" rel="noreferrer" title="个人挂牌 / 近期成交估值；点击搜索当前配置">¥${fmt(v.market.xy[0])}–${fmt(v.market.xy[1])}</a></div><div><span>转转验机</span><a href="${searchLink('zz',v)}" target="_blank" rel="noreferrer" title="带验机和售后服务的买家零售估值；不是回收价">≈ ¥${fmt(v.market.zz[0])}–${fmt(v.market.zz[1])}</a></div></td></tr>`;
+      return `<tr><td class="sticky-product product-cell"><div class="product">${esc(v.p.name)}</div><span class="subtype">${v.p.year} · ${esc(v.p.type)}</span><div class="micro-actions"><button class="text-btn" data-spec="${v.p.id}">完整规格</button><button class="text-btn" data-compare="${v.p.id}">对比</button><a class="source-link" href="${esc(v.official)}" target="_blank" rel="noreferrer">Apple</a></div></td><td>${c.chip}</td><td>${c.target}</td><td class="key-specs-cell">${keySpecsHtml(v)}</td><td>${metricCell(v.indices.single,'single',maxima.single)}</td><td>${metricCell(v.indices.multi,'multi',maxima.multi)}</td><td>${metricCell(v.indices.gpu,'gpu',maxima.gpu)}</td><td class="market-price"><div><span>闲鱼个人</span><a href="${searchLink('xy',v)}" target="_blank" rel="noreferrer" title="个人挂牌 / 近期成交估值；点击搜索当前配置">¥${fmt(v.market.xy[0])}–${fmt(v.market.xy[1])}</a></div><div><span>转转验机</span><a href="${searchLink('zz',v)}" target="_blank" rel="noreferrer" title="带验机和售后服务的买家零售估值；不是回收价">≈ ¥${fmt(v.market.zz[0])}–${fmt(v.market.zz[1])}</a></div></td></tr>`;
     }).join('');
     return head+body+'</tbody></table></div>';
   }
   function cardsHtml(list){
-    return `<div class="cards">${list.map(v=>`<article class="card"><div class="card-top"><div><span class="subtype">${v.p.year} · ${esc(v.p.type)}</span><h3>${esc(v.p.name)}</h3></div><a class="source-link" href="${esc(v.official)}" target="_blank" rel="noreferrer">Apple</a></div><div class="card-config">${configHtml(v,'card')}</div><div class="card-metrics"><div class="metric-box"><small>单核</small><b>${Math.round(v.indices.single)}%</b></div><div class="metric-box"><small>多核</small><b>${Math.round(v.indices.multi)}%</b></div><div class="metric-box"><small>GPU</small><b>${Math.round(v.indices.gpu)}%</b></div></div><div class="card-prices"><div><small>闲鱼个人</small><a href="${searchLink('xy',v)}" target="_blank" rel="noreferrer">¥${fmt(v.market.xy[0])}–${fmt(v.market.xy[1])}</a></div><div><small>转转验机估值</small><a href="${searchLink('zz',v)}" target="_blank" rel="noreferrer">≈ ¥${fmt(v.market.zz[0])}–${fmt(v.market.zz[1])}</a></div></div><div class="card-actions"><button class="compare" data-compare="${v.p.id}">加入对比</button><button class="text-btn" data-spec="${v.p.id}">查看规格</button></div></article>`).join('')}</div>`;
+    return `<div class="cards">${list.map(v=>`<article class="card"><div class="card-top"><div><span class="subtype">${v.p.year} · ${esc(v.p.type)}</span><h3>${esc(v.p.name)}</h3></div><a class="source-link" href="${esc(v.official)}" target="_blank" rel="noreferrer">Apple</a></div><div class="card-config">${configHtml(v,'card')}</div><div class="card-key-specs">${keySpecsHtml(v)}</div><div class="card-metrics"><div class="metric-box"><small>单核</small><b>${Math.round(v.indices.single)}%</b></div><div class="metric-box"><small>多核</small><b>${Math.round(v.indices.multi)}%</b></div><div class="metric-box"><small>GPU</small><b>${Math.round(v.indices.gpu)}%</b></div></div><div class="card-prices"><div><small>闲鱼个人</small><a href="${searchLink('xy',v)}" target="_blank" rel="noreferrer">¥${fmt(v.market.xy[0])}–${fmt(v.market.xy[1])}</a></div><div><small>转转验机估值</small><a href="${searchLink('zz',v)}" target="_blank" rel="noreferrer">≈ ¥${fmt(v.market.zz[0])}–${fmt(v.market.zz[1])}</a></div></div><div class="card-actions"><button class="compare" data-compare="${v.p.id}">加入对比</button><button class="text-btn" data-spec="${v.p.id}">完整规格</button></div></article>`).join('')}</div>`;
   }
   function render(){
     const list=filtered();
